@@ -139,8 +139,56 @@ export async function addMemberOrder(
   }
 }
 
+import type {
+  GroupOrder, GroupMemberOrder, GroupMemberOrderItem,
+  Campaign, CampaignProduct, Product, ProductVariant,
+} from "@prisma/client";
+
+type FullGroupOrder = GroupOrder & {
+  campaign?: (Campaign & {
+    products?: (CampaignProduct & {
+      product: (Product & { variants?: ProductVariant[] }) | null;
+    })[];
+  }) | null;
+  memberOrders?: (GroupMemberOrder & { items?: GroupMemberOrderItem[] })[];
+};
+
+function serializeGroupOrder<T extends FullGroupOrder>(g: T) {
+  return {
+    ...g,
+    totalAmount: Number(g.totalAmount),
+    campaign: g.campaign
+      ? {
+          ...g.campaign,
+          products: g.campaign.products?.map((cp) => ({
+            ...cp,
+            product: cp.product
+              ? {
+                  ...cp.product,
+                  basePrice: Number(cp.product.basePrice),
+                  variants: cp.product.variants?.map((v) => ({
+                    ...v,
+                    priceAdjustment: Number(v.priceAdjustment),
+                  })),
+                }
+              : cp.product,
+          })),
+        }
+      : g.campaign,
+    memberOrders: g.memberOrders?.map((m) => ({
+      ...m,
+      subtotal: Number(m.subtotal),
+      items: m.items?.map((item) => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        subtotal: Number(item.subtotal),
+      })),
+    })),
+  };
+}
+
 export async function getPublicGroupOrder(sessionCode: string) {
-  return prisma.groupOrder.findUnique({
+  const g = await prisma.groupOrder.findUnique({
     where: { sessionCode },
     include: {
       campaign: {
@@ -149,9 +197,7 @@ export async function getPublicGroupOrder(sessionCode: string) {
             include: {
               product: {
                 include: {
-                  variants: {
-                    where: { isActive: true },
-                  },
+                  variants: { where: { isActive: true } },
                 },
               },
             },
@@ -161,13 +207,12 @@ export async function getPublicGroupOrder(sessionCode: string) {
       memberOrders: {
         orderBy: { createdAt: "asc" },
         include: {
-          items: {
-            orderBy: { createdAt: "asc" },
-          },
+          items: { orderBy: { createdAt: "asc" } },
         },
       },
     },
   });
+  return g ? serializeGroupOrder(g) : null;
 }
 
 export async function closeGroupOrder(sessionCode: string): Promise<ActionResult<void>> {
@@ -204,7 +249,7 @@ async function getStore() {
 export async function getDashboardGroupOrders() {
   const store = await getStore();
 
-  return prisma.groupOrder.findMany({
+  const rows = await prisma.groupOrder.findMany({
     where: { campaign: { storeId: store.id } },
     orderBy: { createdAt: "desc" },
     include: {
@@ -212,12 +257,13 @@ export async function getDashboardGroupOrders() {
       _count: { select: { memberOrders: true } },
     },
   });
+  return rows.map((g) => ({ ...g, totalAmount: Number(g.totalAmount) }));
 }
 
 export async function getDashboardGroupOrder(id: string) {
   const store = await getStore();
 
-  const groupOrder = await prisma.groupOrder.findFirst({
+  const g = await prisma.groupOrder.findFirst({
     where: { id, campaign: { storeId: store.id } },
     include: {
       campaign: { select: { name: true, id: true } },
@@ -229,8 +275,20 @@ export async function getDashboardGroupOrder(id: string) {
       },
     },
   });
-
-  return groupOrder;
+  if (!g) return null;
+  return {
+    ...g,
+    totalAmount: Number(g.totalAmount),
+    memberOrders: g.memberOrders.map((m) => ({
+      ...m,
+      subtotal: Number(m.subtotal),
+      items: m.items.map((item) => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        subtotal: Number(item.subtotal),
+      })),
+    })),
+  };
 }
 
 export async function updateGroupOrderStatus(

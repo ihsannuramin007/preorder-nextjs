@@ -20,6 +20,22 @@ async function getStore() {
   return dbUser.store;
 }
 
+import type { Order, OrderItem, Campaign } from "@prisma/client";
+
+function serializeOrder<T extends Order & { items: OrderItem[]; campaign?: Campaign | null }>(o: T) {
+  return {
+    ...o,
+    totalAmount: Number(o.totalAmount),
+    totalHpp: Number(o.totalHpp),
+    items: o.items.map((item) => ({
+      ...item,
+      unitPrice: Number(item.unitPrice),
+      unitHpp: Number(item.unitHpp),
+      subtotal: Number(item.subtotal),
+    })),
+  };
+}
+
 async function generateOrderNumber(storeId: string): Promise<string> {
   const year = new Date().getFullYear();
   const count = await prisma.order.count({
@@ -34,7 +50,7 @@ export async function getOrders(filters?: {
   campaignId?: string;
 }) {
   const store = await getStore();
-  return prisma.order.findMany({
+  const rows = await prisma.order.findMany({
     where: {
       campaign: { storeId: store.id },
       ...(filters?.status ? { status: filters.status } : {}),
@@ -54,14 +70,16 @@ export async function getOrders(filters?: {
     },
     orderBy: { createdAt: "desc" },
   });
+  return rows.map(serializeOrder);
 }
 
 export async function getOrder(id: string) {
   const store = await getStore();
-  return prisma.order.findFirst({
+  const row = await prisma.order.findFirst({
     where: { id, campaign: { storeId: store.id } },
     include: { campaign: true, items: true },
   });
+  return row ? serializeOrder(row) : null;
 }
 
 export async function createPublicOrder(data: {

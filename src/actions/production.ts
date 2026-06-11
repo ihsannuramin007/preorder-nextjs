@@ -111,8 +111,17 @@ export async function generateProductionSheet(
 
 export async function getProductionSheet(campaignId: string) {
   const store = await getStore();
-  return prisma.productionSheet.findFirst({
+  const sheet = await prisma.productionSheet.findFirst({
     where: { campaign: { id: campaignId, storeId: store.id } },
     include: { items: true, campaign: true },
   });
+  if (!sheet) return null;
+  return {
+    ...sheet,
+    items: sheet.items.map((item) => ({
+      ...item,
+      totalQuantity: Number(item.totalQuantity),
+      estimatedCost: Number(item.estimatedCost),
+    })),
+  };
 }

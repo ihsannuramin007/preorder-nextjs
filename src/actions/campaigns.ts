@@ -19,9 +19,43 @@ async function getStore() {
   return dbUser.store;
 }
 
+import type { CampaignProduct, Product, ProductVariant, Order, OrderItem } from "@prisma/client";
+
+function serializeCampaignProduct<
+  T extends CampaignProduct & { product: (Product & { variants?: ProductVariant[] }) | null },
+>(cp: T) {
+  return {
+    ...cp,
+    product: cp.product
+      ? {
+          ...cp.product,
+          basePrice: Number(cp.product.basePrice),
+          variants: cp.product.variants?.map((v) => ({
+            ...v,
+            priceAdjustment: Number(v.priceAdjustment),
+          })),
+        }
+      : cp.product,
+  };
+}
+
+function serializeCampaignOrder<T extends Order & { items: OrderItem[] }>(o: T) {
+  return {
+    ...o,
+    totalAmount: Number(o.totalAmount),
+    totalHpp: Number(o.totalHpp),
+    items: o.items.map((item) => ({
+      ...item,
+      unitPrice: Number(item.unitPrice),
+      unitHpp: Number(item.unitHpp),
+      subtotal: Number(item.subtotal),
+    })),
+  };
+}
+
 export async function getCampaigns() {
   const store = await getStore();
-  return prisma.campaign.findMany({
+  const rows = await prisma.campaign.findMany({
     where: { storeId: store.id },
     include: {
       products: { include: { product: true } },
@@ -29,17 +63,27 @@ export async function getCampaigns() {
     },
     orderBy: { createdAt: "desc" },
   });
+  return rows.map((c) => ({
+    ...c,
+    products: c.products.map(serializeCampaignProduct),
+  }));
 }
 
 export async function getCampaign(id: string) {
   const store = await getStore();
-  return prisma.campaign.findFirst({
+  const c = await prisma.campaign.findFirst({
     where: { id, storeId: store.id },
     include: {
       products: { include: { product: { include: { variants: true } } } },
       orders: { include: { items: true } },
     },
   });
+  if (!c) return null;
+  return {
+    ...c,
+    products: c.products.map(serializeCampaignProduct),
+    orders: c.orders.map(serializeCampaignOrder),
+  };
 }
 
 export async function createCampaign(data: {
