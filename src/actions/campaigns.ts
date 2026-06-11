@@ -53,20 +53,37 @@ function serializeCampaignOrder<T extends Order & { items: OrderItem[] }>(o: T) 
   };
 }
 
-export async function getCampaigns() {
+export async function getCampaigns(filters?: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}) {
   const store = await getStore();
-  const rows = await prisma.campaign.findMany({
-    where: { storeId: store.id },
-    include: {
-      products: { include: { product: true } },
-      _count: { select: { orders: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  return rows.map((c) => ({
-    ...c,
-    products: c.products.map(serializeCampaignProduct),
-  }));
+  const pageSize = filters?.pageSize ?? 10;
+  const page = filters?.page ?? 1;
+  const skip = (page - 1) * pageSize;
+
+  const where = {
+    storeId: store.id,
+    ...(filters?.search
+      ? { name: { contains: filters.search, mode: "insensitive" as const } }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.campaign.findMany({
+      where,
+      include: {
+        _count: { select: { orders: true, products: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    prisma.campaign.count({ where }),
+  ]);
+
+  return { data: rows, total };
 }
 
 export async function getCampaign(id: string) {

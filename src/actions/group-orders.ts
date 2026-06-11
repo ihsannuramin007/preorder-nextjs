@@ -246,18 +246,43 @@ async function getStore() {
   return dbUser.store;
 }
 
-export async function getDashboardGroupOrders() {
+export async function getDashboardGroupOrders(filters?: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}) {
   const store = await getStore();
+  const pageSize = filters?.pageSize ?? 10;
+  const page = filters?.page ?? 1;
+  const skip = (page - 1) * pageSize;
 
-  const rows = await prisma.groupOrder.findMany({
-    where: { campaign: { storeId: store.id } },
-    orderBy: { createdAt: "desc" },
-    include: {
-      campaign: { select: { name: true } },
-      _count: { select: { memberOrders: true } },
-    },
-  });
-  return rows.map((g) => ({ ...g, totalAmount: Number(g.totalAmount) }));
+  const where = {
+    campaign: { storeId: store.id },
+    ...(filters?.search
+      ? {
+          OR: [
+            { facilitatorName: { contains: filters.search, mode: "insensitive" as const } },
+            { sessionCode: { contains: filters.search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.groupOrder.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: {
+        campaign: { select: { name: true } },
+        _count: { select: { memberOrders: true } },
+      },
+      skip,
+      take: pageSize,
+    }),
+    prisma.groupOrder.count({ where }),
+  ]);
+
+  return { data: rows.map((g) => ({ ...g, totalAmount: Number(g.totalAmount) })), total };
 }
 
 export async function getDashboardGroupOrder(id: string) {

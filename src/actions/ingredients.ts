@@ -32,6 +32,36 @@ export async function getIngredients() {
   return rows.map(serializeIngredient);
 }
 
+export async function getIngredientsList(filters?: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const store = await getStore();
+  const pageSize = filters?.pageSize ?? 10;
+  const page = filters?.page ?? 1;
+  const skip = (page - 1) * pageSize;
+
+  const where = {
+    storeId: store.id,
+    ...(filters?.search
+      ? { name: { contains: filters.search, mode: "insensitive" as const } }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.ingredient.findMany({
+      where,
+      orderBy: { name: "asc" },
+      skip,
+      take: pageSize,
+    }),
+    prisma.ingredient.count({ where }),
+  ]);
+
+  return { data: rows.map(serializeIngredient), total };
+}
+
 export async function getIngredient(id: string) {
   const store = await getStore();
   const row = await prisma.ingredient.findFirst({

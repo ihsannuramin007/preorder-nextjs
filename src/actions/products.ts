@@ -53,6 +53,37 @@ export async function getProducts() {
   return rows.map(serializeProduct);
 }
 
+export async function getProductsList(filters?: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const store = await getStore();
+  const pageSize = filters?.pageSize ?? 10;
+  const page = filters?.page ?? 1;
+  const skip = (page - 1) * pageSize;
+
+  const where = {
+    storeId: store.id,
+    ...(filters?.search
+      ? { name: { contains: filters.search, mode: "insensitive" as const } }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: { variants: true, recipeItems: { include: { ingredient: true } } },
+      orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
+      skip,
+      take: pageSize,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  return { data: rows.map(serializeProduct), total };
+}
+
 export async function getProduct(id: string) {
   const store = await getStore();
   const row = await prisma.product.findFirst({

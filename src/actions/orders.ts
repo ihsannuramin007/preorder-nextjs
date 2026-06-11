@@ -48,29 +48,40 @@ export async function getOrders(filters?: {
   status?: OrderStatus;
   search?: string;
   campaignId?: string;
+  page?: number;
+  pageSize?: number;
 }) {
   const store = await getStore();
-  const rows = await prisma.order.findMany({
-    where: {
-      campaign: { storeId: store.id },
-      ...(filters?.status ? { status: filters.status } : {}),
-      ...(filters?.campaignId ? { campaignId: filters.campaignId } : {}),
-      ...(filters?.search
-        ? {
-            OR: [
-              { customerName: { contains: filters.search, mode: "insensitive" } },
-              { orderNumber: { contains: filters.search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    include: {
-      campaign: true,
-      items: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  return rows.map(serializeOrder);
+  const pageSize = filters?.pageSize ?? 10;
+  const page = filters?.page ?? 1;
+  const skip = (page - 1) * pageSize;
+
+  const where = {
+    campaign: { storeId: store.id },
+    ...(filters?.status ? { status: filters.status } : {}),
+    ...(filters?.campaignId ? { campaignId: filters.campaignId } : {}),
+    ...(filters?.search
+      ? {
+          OR: [
+            { customerName: { contains: filters.search, mode: "insensitive" as const } },
+            { orderNumber: { contains: filters.search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      include: { campaign: true, items: true },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  return { data: rows.map(serializeOrder), total };
 }
 
 export async function getOrder(id: string) {

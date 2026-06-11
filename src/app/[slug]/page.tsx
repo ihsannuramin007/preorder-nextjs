@@ -6,7 +6,10 @@ import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { formatDate } from "@/lib/utils/date";
 import { MessageCircle, Instagram, Package, ShoppingBag, Users } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
+
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,
@@ -63,9 +66,16 @@ export default async function PublicStorePage({
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 pb-16 pt-8">
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center mb-4 overflow-hidden">
+          <div className="relative w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center mb-4 overflow-hidden">
             {store.logoUrl ? (
-              <img src={store.logoUrl} alt={store.name} className="w-full h-full object-cover" />
+              <Image
+                src={store.logoUrl}
+                alt={store.name}
+                fill
+                className="object-cover"
+                sizes="80px"
+                priority
+              />
             ) : (
               <Package className="h-10 w-10 text-primary-600" />
             )}
@@ -147,12 +157,14 @@ export default async function PublicStorePage({
                   key={product.id}
                   className="rounded-card border border-border bg-white overflow-hidden"
                 >
-                  <div className="aspect-video bg-muted flex items-center justify-center overflow-hidden">
+                  <div className="relative aspect-video bg-muted flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
-                      <img
+                      <Image
                         src={product.imageUrl}
                         alt={product.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 50vw"
                       />
                     ) : (
                       <Package className="h-8 w-8 text-muted-foreground" />

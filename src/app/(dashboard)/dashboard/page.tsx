@@ -37,7 +37,10 @@ async function DashboardContent() {
 
   const store = dbUser.store;
 
-  const [openCampaigns, pendingPayments, needVerification, recentOrders] =
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const [openCampaigns, pendingPayments, needVerification, recentOrders, ordersToday, revenueResult] =
     await Promise.all([
       prisma.campaign.count({ where: { storeId: store.id, status: "OPEN" } }),
       prisma.order.count({
@@ -52,26 +55,20 @@ async function DashboardContent() {
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
+      prisma.order.count({
+        where: {
+          campaign: { storeId: store.id },
+          createdAt: { gte: todayStart },
+        },
+      }),
+      prisma.order.aggregate({
+        where: {
+          campaign: { storeId: store.id },
+          status: { in: ["PAID", "PRODUCTION", "READY", "COMPLETED"] },
+        },
+        _sum: { totalAmount: true, totalHpp: true },
+      }),
     ]);
-
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  const [ordersToday, revenueResult] = await Promise.all([
-    prisma.order.count({
-      where: {
-        campaign: { storeId: store.id },
-        createdAt: { gte: todayStart },
-      },
-    }),
-    prisma.order.aggregate({
-      where: {
-        campaign: { storeId: store.id },
-        status: { in: ["PAID", "PRODUCTION", "READY", "COMPLETED"] },
-      },
-      _sum: { totalAmount: true, totalHpp: true },
-    }),
-  ]);
 
   const revenue = Number(revenueResult._sum.totalAmount ?? 0);
   const totalHpp = Number(revenueResult._sum.totalHpp ?? 0);
