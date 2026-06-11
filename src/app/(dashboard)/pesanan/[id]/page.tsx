@@ -1,0 +1,124 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { getOrder } from "@/actions/orders";
+import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CurrencyDisplay } from "@/components/shared/currency-display";
+import { formatDateTime } from "@/lib/utils/date";
+import { OrderStatusActions } from "./order-status-actions";
+import { PaymentVerification } from "./payment-verification";
+import { ArrowLeft, User, MapPin, Phone, ShoppingBag } from "lucide-react";
+import type { OrderStatus } from "@prisma/client";
+
+const statusConfig: Record<OrderStatus, { label: string; variant: any }> = {
+  PENDING_PAYMENT: { label: "Menunggu Pembayaran", variant: "secondary" },
+  PAYMENT_REVIEW: { label: "Menunggu Verifikasi", variant: "warning" },
+  PAID: { label: "Lunas", variant: "success" },
+  PRODUCTION: { label: "Sedang Diproduksi", variant: "info" },
+  READY: { label: "Siap Dikirim", variant: "default" },
+  COMPLETED: { label: "Selesai", variant: "outline" },
+  CANCELLED: { label: "Dibatalkan", variant: "destructive" },
+};
+
+export default async function PesananDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const order = await getOrder(id);
+  if (!order) notFound();
+
+  const cfg = statusConfig[order.status];
+
+  return (
+    <>
+      <PageHeader
+        title={order.orderNumber}
+        actions={
+          <Button variant="ghost" asChild>
+            <Link href="/pesanan"><ArrowLeft className="h-4 w-4 mr-1" />Pesanan</Link>
+          </Button>
+        }
+      />
+
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="pt-4 flex flex-wrap items-center gap-3 justify-between">
+            <div className="flex items-center gap-3">
+              <Badge variant={cfg.variant} className="text-sm px-3 py-1">{cfg.label}</Badge>
+              <p className="text-sm text-muted-foreground">
+                {formatDateTime(order.createdAt)}
+              </p>
+            </div>
+            <OrderStatusActions orderId={order.id} status={order.status} />
+          </CardContent>
+        </Card>
+
+        {order.status === "PAYMENT_REVIEW" && (
+          <PaymentVerification orderId={order.id} paymentProofUrl={order.paymentProofUrl} />
+        )}
+
+        {order.rejectionReason && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-4">
+              <p className="text-sm font-semibold text-red-700">Alasan Penolakan Pembayaran</p>
+              <p className="text-sm text-red-600">{order.rejectionReason}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2">
+              <User className="h-4 w-4" />Info Pelanggan
+            </CardTitle></CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <User className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>{order.customerName}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>{order.customerPhone}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
+                <span>{order.customerAddress}</span>
+              </div>
+              {order.customerNotes && (
+                <p className="text-muted-foreground italic">"{order.customerNotes}"</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4" />Item Pesanan
+            </CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {order.items.map((item) => (
+                  <div key={item.id} className="flex justify-between py-1.5 border-b last:border-0 text-sm">
+                    <div>
+                      <p className="font-medium">{item.productName}</p>
+                      {item.variantName && <p className="text-xs text-muted-foreground">{item.variantName}</p>}
+                      <p className="text-xs text-muted-foreground">x{item.quantity}</p>
+                    </div>
+                    <CurrencyDisplay amount={Number(item.subtotal)} size="sm" />
+                  </div>
+                ))}
+                <div className="flex justify-between pt-2 font-semibold">
+                  <span>Total</span>
+                  <CurrencyDisplay amount={Number(order.totalAmount)} size="sm" className="text-primary-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </>
+  );
+}
