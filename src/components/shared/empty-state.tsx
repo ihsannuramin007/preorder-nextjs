@@ -30,8 +30,8 @@ export function EmptyState({
       )}
     >
       {Icon && (
-        <div className="mb-4 rounded-full bg-primary-50 p-4">
-          <Icon className="h-8 w-8 text-primary-500" />
+        <div className="mb-4 rounded-full bg-[#FFD400] border-2 border-[#0D0D0D] shadow-sticker p-4">
+          <Icon className="h-8 w-8 text-[#111111]" />
         </div>
       )}
       <h3 className="mb-2 text-lg font-semibold text-foreground">{title}</h3>

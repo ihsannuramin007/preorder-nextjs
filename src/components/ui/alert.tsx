@@ -3,14 +3,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 
 const alertVariants = cva(
-  "relative w-full rounded-card border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  "relative w-full rounded-card border-2 p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
-        destructive: "border-red-200 bg-red-50 text-red-700 [&>svg]:text-red-600",
-        success: "border-green-200 bg-green-50 text-green-700 [&>svg]:text-green-600",
-        warning: "border-yellow-200 bg-yellow-50 text-yellow-700 [&>svg]:text-yellow-600",
+        default: "border-[#E5E7EB] bg-[#F7F7F7] text-[#111111]",
+        destructive: "border-[#0D0D0D] bg-[#FF3B6B] text-white [&>svg]:text-white",
+        success: "border-green-800 bg-green-100 text-green-800 [&>svg]:text-green-700",
+        warning: "border-[#0D0D0D] bg-[#FFD400] text-[#111111] [&>svg]:text-[#111111]",
       },
     },
     defaultVariants: { variant: "default" },

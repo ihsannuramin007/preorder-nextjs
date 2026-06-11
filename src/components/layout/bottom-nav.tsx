@@ -23,7 +23,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border z-40 safe-area-inset-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#0D0D0D] z-40 safe-area-inset-bottom">
       <div className="flex items-center justify-around px-2 py-2">
         {navItems.map((item) => {
           const isActive =
@@ -33,12 +33,14 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[44px] min-h-[44px] justify-center transition-colors",
-                isActive ? "text-primary-600" : "text-muted-foreground"
+                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-full min-w-[52px] min-h-[44px] justify-center transition-all duration-150",
+                isActive
+                  ? "bg-[#FFD400] text-[#111111] border-2 border-[#0D0D0D] shadow-sticker-sm"
+                  : "text-[#9A9A9A] hover:text-[#111111]"
               )}
             >
               <item.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-[10px] font-semibold">{item.label}</span>
             </Link>
           );
         })}

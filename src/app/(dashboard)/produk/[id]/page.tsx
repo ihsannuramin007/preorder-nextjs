@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getProduct } from "@/actions/products";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
@@ -9,10 +10,11 @@ import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { calculateHpp } from "@/lib/utils/hpp";
 import { CATEGORY_LABELS } from "@/lib/constants/categories";
 import { UNIT_LABELS } from "@/lib/constants/units";
-import { ArrowLeft, FlaskConical, Package } from "lucide-react";
+import { ArrowLeft, FlaskConical, ImageIcon } from "lucide-react";
 import type { ProductStatus } from "@prisma/client";
 import { DeleteProductButton } from "./delete-product-button";
 import { ProductStatusActions } from "./product-status-actions";
+import { ProductImageUpload } from "./product-image-upload";
 
 const statusConfig: Record<ProductStatus, { label: string; variant: any }> = {
   DRAFT: { label: "Draft", variant: "secondary" },
@@ -39,7 +41,8 @@ export default async function ProdukDetailPage({
     }))
   );
 
-  const margin = hpp > 0 ? ((Number(product.basePrice) - hpp) / Number(product.basePrice)) * 100 : 0;
+  const margin =
+    hpp > 0 ? ((Number(product.basePrice) - hpp) / Number(product.basePrice)) * 100 : 0;
   const cfg = statusConfig[product.status];
 
   return (
@@ -48,19 +51,22 @@ export default async function ProdukDetailPage({
         title={product.name}
         actions={
           <Button variant="ghost" asChild>
-            <Link href="/produk"><ArrowLeft className="h-4 w-4 mr-1" />Produk</Link>
+            <Link href="/produk">
+              <ArrowLeft className="h-4 w-4 mr-1" />Produk
+            </Link>
           </Button>
         }
       />
 
       <div className="grid md:grid-cols-3 gap-4">
+        {/* Main content */}
         <div className="md:col-span-2 space-y-4">
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle>{product.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-[#9A9A9A] mt-1">
                     {CATEGORY_LABELS[product.category]}
                   </p>
                 </div>
@@ -68,21 +74,44 @@ export default async function ProdukDetailPage({
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {product.description && (
-                <p className="text-sm text-muted-foreground">{product.description}</p>
+              {/* Product image display */}
+              {product.imageUrl && (
+                <div className="relative w-full aspect-video rounded-lg border-2 border-[#0D0D0D] overflow-hidden shadow-sticker bg-[#F7F7F7]">
+                  <Image
+                    src={product.imageUrl}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    priority
+                  />
+                </div>
               )}
+
+              {product.description && (
+                <p className="text-sm text-[#9A9A9A]">{product.description}</p>
+              )}
+
               <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-lg bg-muted p-3 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Harga Jual</p>
-                  <CurrencyDisplay amount={Number(product.basePrice)} size="sm" className="font-bold" />
+                <div className="rounded-lg border-2 border-[#0D0D0D] bg-[#F7F7F7] p-3 text-center shadow-sticker-sm">
+                  <p className="text-xs text-[#9A9A9A] mb-1 font-medium">Harga Jual</p>
+                  <CurrencyDisplay
+                    amount={Number(product.basePrice)}
+                    size="sm"
+                    className="font-bold text-[#111111]"
+                  />
                 </div>
-                <div className="rounded-lg bg-muted p-3 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">HPP</p>
-                  <CurrencyDisplay amount={hpp} size="sm" className="font-bold text-muted-foreground" />
+                <div className="rounded-lg border-2 border-[#0D0D0D] bg-[#F7F7F7] p-3 text-center shadow-sticker-sm">
+                  <p className="text-xs text-[#9A9A9A] mb-1 font-medium">HPP</p>
+                  <CurrencyDisplay
+                    amount={hpp}
+                    size="sm"
+                    className="font-bold text-[#9A9A9A]"
+                  />
                 </div>
-                <div className="rounded-lg bg-muted p-3 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Margin</p>
-                  <p className="font-bold text-sm text-success">{margin.toFixed(1)}%</p>
+                <div className="rounded-lg border-2 border-[#FFD400] bg-[#FFD400] p-3 text-center shadow-sticker-sm">
+                  <p className="text-xs text-[#111111] mb-1 font-medium">Margin</p>
+                  <p className="font-bold text-sm text-[#111111]">{margin.toFixed(1)}%</p>
                 </div>
               </div>
             </CardContent>
@@ -90,13 +119,18 @@ export default async function ProdukDetailPage({
 
           {product.variants.length > 0 && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Varian</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-base">Varian</CardTitle>
+              </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {product.variants.map((v) => (
-                    <div key={v.id} className="flex justify-between py-2 border-b last:border-0">
-                      <span className="text-sm font-medium">{v.name}</span>
-                      <span className="text-sm text-muted-foreground">
+                    <div
+                      key={v.id}
+                      className="flex justify-between py-2 border-b border-[#E5E7EB] last:border-0"
+                    >
+                      <span className="text-sm font-semibold text-[#111111]">{v.name}</span>
+                      <span className="text-sm text-[#9A9A9A]">
                         {Number(v.priceAdjustment) >= 0 ? "+" : ""}
                         <CurrencyDisplay amount={Number(v.priceAdjustment)} size="sm" />
                       </span>
@@ -112,7 +146,7 @@ export default async function ProdukDetailPage({
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <FlaskConical className="h-4 w-4" />
-                  Resep & Bahan Baku
+                  Resep &amp; Bahan Baku
                 </CardTitle>
                 <Button variant="outline" size="sm" asChild>
                   <Link href={`/produk/${product.id}/resep`}>Edit Resep</Link>
@@ -121,15 +155,18 @@ export default async function ProdukDetailPage({
             </CardHeader>
             <CardContent>
               {product.recipeItems.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
+                <p className="text-sm text-[#9A9A9A] text-center py-4">
                   Belum ada resep. Tambahkan bahan baku untuk menghitung HPP.
                 </p>
               ) : (
                 <div className="space-y-2">
                   {product.recipeItems.map((ri) => (
-                    <div key={ri.id} className="flex justify-between py-2 border-b last:border-0">
-                      <span className="text-sm">{ri.ingredient.name}</span>
-                      <span className="text-sm text-muted-foreground">
+                    <div
+                      key={ri.id}
+                      className="flex justify-between py-2 border-b border-[#E5E7EB] last:border-0"
+                    >
+                      <span className="text-sm text-[#111111]">{ri.ingredient.name}</span>
+                      <span className="text-sm text-[#9A9A9A]">
                         {Number(ri.quantity)} {UNIT_LABELS[ri.ingredient.unit]}
                       </span>
                     </div>
@@ -140,16 +177,37 @@ export default async function ProdukDetailPage({
           </Card>
         </div>
 
+        {/* Sidebar */}
         <div className="space-y-4">
+          {/* Image upload */}
           <Card>
-            <CardHeader><CardTitle className="text-base">Status Produk</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                Foto Produk
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ProductImageUpload
+                productId={product.id}
+                initialUrl={product.imageUrl}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Status Produk</CardTitle>
+            </CardHeader>
             <CardContent>
               <ProductStatusActions productId={product.id} status={product.status} />
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Aksi</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Aksi</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-2">
               <Button variant="outline" asChild className="w-full">
                 <Link href={`/produk/${product.id}/resep`}>
