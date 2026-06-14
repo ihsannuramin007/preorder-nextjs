@@ -38,6 +38,8 @@ async function ProductList({ q, page }: { q?: string; page: number }) {
         description="Buat produk pertama kamu dan mulai terima pesanan."
         ctaLabel="Buat Produk"
         ctaHref="/produk/baru"
+        hintId="produk-empty"
+        hint="Tambahkan produk yang kamu jual di sini — ini yang akan muncul di halaman pesanan pelangganmu."
       />
     );
   }

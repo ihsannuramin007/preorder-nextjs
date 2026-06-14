@@ -10,6 +10,7 @@ import { formatRelative } from "@/lib/utils/date";
 import { ShoppingBag, Clock, CheckCircle, TrendingUp, Calendar, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { OnboardingHint } from "@/components/shared/onboarding-hint";
 
 async function DashboardContent() {
   const supabase = await createClient();
@@ -28,9 +29,15 @@ async function DashboardContent() {
         <p className="text-muted-foreground mb-4">
           Mulai dengan membuat toko kamu terlebih dahulu.
         </p>
-        <Button asChild>
-          <Link href="/toko">Buat Toko Sekarang</Link>
-        </Button>
+        <OnboardingHint
+          id="onboard-create-store"
+          message="👋 Langkah pertama: buat profil toko kamu untuk bisa menerima pesanan dari pelanggan!"
+          side="top"
+        >
+          <Button asChild>
+            <Link href="/toko">Buat Toko Sekarang</Link>
+          </Button>
+        </OnboardingHint>
       </div>
     );
   }

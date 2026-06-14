@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
 import { LucideIcon } from "lucide-react";
+import { OnboardingHint } from "./onboarding-hint";
 
 type EmptyStateProps = {
   icon?: LucideIcon;
@@ -11,6 +12,8 @@ type EmptyStateProps = {
   ctaHref?: string;
   onCtaClick?: () => void;
   className?: string;
+  hint?: string;
+  hintId?: string;
 };
 
 export function EmptyState({
@@ -21,7 +24,18 @@ export function EmptyState({
   ctaHref,
   onCtaClick,
   className,
+  hint,
+  hintId,
 }: EmptyStateProps) {
+  const ctaButton =
+    ctaLabel && ctaHref ? (
+      <Button asChild>
+        <Link href={ctaHref}>{ctaLabel}</Link>
+      </Button>
+    ) : ctaLabel && onCtaClick ? (
+      <Button onClick={onCtaClick}>{ctaLabel}</Button>
+    ) : null;
+
   return (
     <div
       className={cn(
@@ -36,13 +50,12 @@ export function EmptyState({
       )}
       <h3 className="mb-2 text-lg font-semibold text-foreground">{title}</h3>
       <p className="mb-6 max-w-sm text-sm text-muted-foreground">{description}</p>
-      {ctaLabel && ctaHref && (
-        <Button asChild>
-          <Link href={ctaHref}>{ctaLabel}</Link>
-        </Button>
-      )}
-      {ctaLabel && onCtaClick && (
-        <Button onClick={onCtaClick}>{ctaLabel}</Button>
+      {ctaButton && hint && hintId ? (
+        <OnboardingHint id={hintId} message={hint} side="top">
+          {ctaButton}
+        </OnboardingHint>
+      ) : (
+        ctaButton
       )}
     </div>
   );

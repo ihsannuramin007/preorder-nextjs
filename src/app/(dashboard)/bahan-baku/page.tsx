@@ -28,6 +28,8 @@ async function IngredientList({ q, page }: { q?: string; page: number }) {
         description="Tambahkan bahan baku untuk menghitung biaya produksi (HPP) secara otomatis."
         ctaLabel="Tambah Bahan Baku"
         ctaHref="/bahan-baku/baru"
+        hintId="bahan-baku-empty"
+        hint="Input bahan baku untuk menghitung HPP (biaya produksi) secara otomatis di setiap produkmu."
       />
     );
   }

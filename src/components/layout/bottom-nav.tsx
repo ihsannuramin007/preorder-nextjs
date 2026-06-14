@@ -5,18 +5,18 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ShoppingBag,
+  Calendar,
   Package,
   Store,
-  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
   { href: "/dashboard", label: "Beranda", icon: LayoutDashboard },
+  { href: "/periode-po", label: "Periode PO", icon: Calendar },
   { href: "/pesanan", label: "Pesanan", icon: ShoppingBag },
   { href: "/produk", label: "Produk", icon: Package },
   { href: "/toko", label: "Toko", icon: Store },
-  { href: "/keuntungan", label: "Akun", icon: User },
 ];
 
 export function BottomNav() {

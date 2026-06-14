@@ -23,6 +23,12 @@ export async function getStore(): Promise<Store | null> {
   return prisma.store.findUnique({ where: { userId: user.id } });
 }
 
+export async function getStoreSetupData(): Promise<{ store: Store | null; businessName: string }> {
+  const user = await getCurrentUser();
+  const store = await prisma.store.findUnique({ where: { userId: user.id } });
+  return { store, businessName: user.businessName };
+}
+
 export async function createOrUpdateStore(
   formData: FormData
 ): Promise<ActionResult<Store>> {

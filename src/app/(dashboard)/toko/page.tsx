@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
-import { createOrUpdateStore, getStore } from "@/actions/store";
+import { OnboardingHint } from "@/components/shared/onboarding-hint";
+import { createOrUpdateStore, getStoreSetupData } from "@/actions/store";
 import { generateSlug } from "@/lib/utils/slug";
-import { ExternalLink, Copy } from "lucide-react";
+import { ExternalLink, Copy, PartyPopper } from "lucide-react";
 
 export default function TokoPage() {
   const [isPending, startTransition] = useTransition();
@@ -20,12 +22,18 @@ export default function TokoPage() {
   const [slug, setSlug] = useState("");
   const [name, setName] = useState("");
 
+  const searchParams = useSearchParams();
+  const isWelcome = searchParams.get("welcome") === "1";
+
   useEffect(() => {
-    getStore().then((s) => {
-      if (s) {
-        setStore(s);
-        setSlug(s.slug);
-        setName(s.name);
+    getStoreSetupData().then(({ store, businessName }) => {
+      if (store) {
+        setStore(store);
+        setSlug(store.slug);
+        setName(store.name);
+      } else {
+        setName(businessName);
+        setSlug(generateSlug(businessName));
       }
       setIsLoading(false);
     });
@@ -65,6 +73,18 @@ export default function TokoPage() {
         description="Kelola profil dan tampilan toko kamu"
       />
 
+      {isWelcome && !store && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border-2 border-[#0D0D0D] bg-[#FFD400] p-4 shadow-[3px_3px_0px_#0D0D0D]">
+          <PartyPopper className="h-5 w-5 text-[#0D0D0D] flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-[#0D0D0D]">Akun kamu sudah aktif! 🎉</p>
+            <p className="text-sm text-[#0D0D0D]/80 mt-0.5">
+              Yuk lengkapi profil toko kamu dulu — nama toko sudah diisi otomatis dari saat kamu daftar.
+            </p>
+          </div>
+        </div>
+      )}
+
       {storeUrl && (
         <Card className="mb-6 bg-primary-50 border-primary-200">
           <CardContent className="py-4 flex items-center justify-between gap-4">
@@ -102,14 +122,21 @@ export default function TokoPage() {
           <form action={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="name">Nama Toko</Label>
-              <Input
-                id="name"
-                name="name"
-                value={name}
-                onChange={handleNameChange}
-                placeholder="Contoh: Kopi Bu Ani"
-                required
-              />
+              <OnboardingHint
+                id="toko-setup-name"
+                message="Nama ini akan ditampilkan ke pelanggan kamu di halaman pemesanan. Pastikan mudah diingat!"
+                show={!store}
+                side="bottom"
+              >
+                <Input
+                  id="name"
+                  name="name"
+                  value={name}
+                  onChange={handleNameChange}
+                  placeholder="Contoh: Kopi Bu Ani"
+                  required
+                />
+              </OnboardingHint>
             </div>
 
             <div className="space-y-1.5">
@@ -149,12 +176,19 @@ export default function TokoPage() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="whatsapp">Nomor WhatsApp</Label>
-                <Input
-                  id="whatsapp"
-                  name="whatsapp"
-                  defaultValue={store?.whatsapp ?? ""}
-                  placeholder="628123456789"
-                />
+                <OnboardingHint
+                  id="toko-setup-whatsapp"
+                  message="Pelanggan bisa langsung hubungi kamu lewat WhatsApp setelah memesan."
+                  show={!store?.whatsapp}
+                  side="bottom"
+                >
+                  <Input
+                    id="whatsapp"
+                    name="whatsapp"
+                    defaultValue={store?.whatsapp ?? ""}
+                    placeholder="628123456789"
+                  />
+                </OnboardingHint>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="instagram">Instagram</Label>

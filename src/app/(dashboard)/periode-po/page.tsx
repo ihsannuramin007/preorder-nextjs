@@ -38,6 +38,8 @@ async function CampaignList({ q, page }: { q?: string; page: number }) {
         description="Buat periode PO untuk mulai menerima pesanan dari pelanggan."
         ctaLabel="Buat Periode PO"
         ctaHref="/periode-po/baru"
+        hintId="periode-po-empty"
+        hint="Buat Periode PO untuk membuka pemesanan — pelanggan bisa langsung memesan lewat link toko kamu."
       />
     );
   }

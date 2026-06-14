@@ -12,7 +12,6 @@ import {
   TrendingUp,
   FileText,
   LogOut,
-  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
@@ -20,12 +19,11 @@ import { useRouter } from "next/navigation";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/pesanan", label: "Pesanan", icon: ShoppingBag },
-  { href: "/pesanan/grup", label: "Group Order", icon: Users },
-  { href: "/periode-po", label: "Periode PO", icon: Calendar },
-  { href: "/produk", label: "Produk", icon: Package },
-  { href: "/bahan-baku", label: "Bahan Baku", icon: FlaskConical },
   { href: "/toko", label: "Toko Saya", icon: Store },
+  { href: "/bahan-baku", label: "Bahan Baku", icon: FlaskConical },
+  { href: "/produk", label: "Produk", icon: Package },
+  { href: "/periode-po", label: "Periode PO", icon: Calendar },
+  { href: "/pesanan", label: "Pesanan", icon: ShoppingBag },
   { href: "/keuntungan", label: "Keuntungan", icon: TrendingUp },
   { href: "/laporan", label: "Laporan", icon: FileText },
 ];
