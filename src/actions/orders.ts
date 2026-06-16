@@ -122,7 +122,10 @@ export async function createPublicOrder(data: {
           where: { id: item.variantId },
           include: {
             product: {
-              include: { recipeItems: { include: { ingredient: true } } },
+              include: {
+                recipeItems: { include: { ingredient: true } },
+                additionalCosts: true,
+              },
             },
           },
         });
@@ -134,11 +137,9 @@ export async function createPublicOrder(data: {
         const unitHpp = calculateHpp(
           variant.product.recipeItems.map((ri) => ({
             quantity: Number(ri.quantity),
-            ingredient: {
-              purchaseQty: Number(ri.ingredient.purchaseQty),
-              purchasePrice: Number(ri.ingredient.purchasePrice),
-            },
-          }))
+            ingredient: { averageCost: Number(ri.ingredient.averageCost) },
+          })),
+          variant.product.additionalCosts.map((c) => ({ amount: Number(c.amount) }))
         );
         const subtotal = unitPrice * item.quantity;
 

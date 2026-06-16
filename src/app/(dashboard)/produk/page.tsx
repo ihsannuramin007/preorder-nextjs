@@ -10,6 +10,7 @@ import { ListSearch, ListPagination } from "@/components/shared/list-controls";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { CATEGORY_LABELS } from "@/lib/constants/categories";
 import { calculateHpp } from "@/lib/utils/hpp";
+import { calculateCapacity } from "@/lib/utils/production";
 import { Plus, Package, Search } from "lucide-react";
 import Image from "next/image";
 import type { ProductStatus } from "@prisma/client";
@@ -51,10 +52,13 @@ async function ProductList({ q, page }: { q?: string; page: number }) {
           const hpp = calculateHpp(
             product.recipeItems.map((ri) => ({
               quantity: Number(ri.quantity),
-              ingredient: {
-                purchaseQty: Number(ri.ingredient.purchaseQty),
-                purchasePrice: Number(ri.ingredient.purchasePrice),
-              },
+              ingredient: { averageCost: Number(ri.ingredient.averageCost) },
+            }))
+          );
+          const capacity = calculateCapacity(
+            product.recipeItems.map((ri) => ({
+              quantity: Number(ri.quantity),
+              ingredient: { currentStock: Number(ri.ingredient.currentStock) },
             }))
           );
           const cfg = statusConfig[product.status];
@@ -86,6 +90,11 @@ async function ProductList({ q, page }: { q?: string; page: number }) {
                     {hpp > 0 && (
                       <p className="text-xs text-muted-foreground mt-0.5">
                         HPP: <CurrencyDisplay amount={hpp} size="sm" />
+                      </p>
+                    )}
+                    {Number.isFinite(capacity) && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Bisa produksi: {capacity} pcs
                       </p>
                     )}
                   </div>

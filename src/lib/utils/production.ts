@@ -10,8 +10,7 @@ type OrderItemWithRecipe = {
           id: string;
           name: string;
           unit: Unit;
-          purchaseQty: number;
-          purchasePrice: number;
+          averageCost: number;
         };
       }[];
     };
@@ -26,6 +25,21 @@ export type IngredientNeed = {
   estimatedCost: number;
 };
 
+type CapacityRecipeItem = {
+  quantity: number;
+  ingredient: { currentStock: number };
+};
+
+export function calculateCapacity(recipeItems: CapacityRecipeItem[]): number {
+  if (recipeItems.length === 0) return Infinity;
+
+  return Math.min(
+    ...recipeItems.map((item) =>
+      item.quantity > 0 ? Math.floor(item.ingredient.currentStock / item.quantity) : Infinity
+    )
+  );
+}
+
 export function generateProductionNeeds(
   orderItems: OrderItemWithRecipe[]
 ): IngredientNeed[] {
@@ -36,11 +50,7 @@ export function generateProductionNeeds(
     for (const ri of recipe) {
       const { ingredient } = ri;
       const qty = ri.quantity * item.quantity;
-      const costPerUnit =
-        ingredient.purchaseQty > 0
-          ? ingredient.purchasePrice / ingredient.purchaseQty
-          : 0;
-      const cost = costPerUnit * qty;
+      const cost = ingredient.averageCost * qty;
 
       const existing = map.get(ingredient.id);
       if (existing) {
@@ -59,4 +69,26 @@ export function generateProductionNeeds(
   }
 
   return Array.from(map.values());
+}
+
+export type AvailabilityResult = {
+  ready: boolean;
+  missing: { ingredientId: string; ingredientName: string; unit: Unit; shortBy: number }[];
+};
+
+export function checkAvailability(
+  needs: IngredientNeed[],
+  stockByIngredientId: Map<string, number>
+): AvailabilityResult {
+  const missing = needs
+    .map((n) => ({ ...n, available: stockByIngredientId.get(n.ingredientId) ?? 0 }))
+    .filter((n) => n.available < n.totalQuantity)
+    .map((n) => ({
+      ingredientId: n.ingredientId,
+      ingredientName: n.ingredientName,
+      unit: n.unit,
+      shortBy: n.totalQuantity - n.available,
+    }));
+
+  return { ready: missing.length === 0, missing };
 }

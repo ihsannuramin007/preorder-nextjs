@@ -3,11 +3,13 @@ import Link from "next/link";
 import { getIngredientsList } from "@/actions/ingredients";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ListSkeleton } from "@/components/shared/loading-skeleton";
 import { ListSearch, ListPagination } from "@/components/shared/list-controls";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { UNIT_LABELS } from "@/lib/constants/units";
+import { INGREDIENT_CATEGORY_LABELS } from "@/lib/constants/ingredient-categories";
 import { Plus, FlaskConical, Search } from "lucide-react";
 
 const PAGE_SIZE = 10;
@@ -39,7 +41,8 @@ async function IngredientList({ q, page }: { q?: string; page: number }) {
       <div className="space-y-3">
         {ingredients.map((ingredient) => {
           const unitLabel = UNIT_LABELS[ingredient.unit];
-          const costPerUnit = ingredient.purchasePrice / ingredient.purchaseQty;
+          const isOut = ingredient.currentStock <= 0;
+          const isLow = !isOut && ingredient.currentStock <= ingredient.minimumStock;
 
           return (
             <Link
@@ -53,18 +56,26 @@ async function IngredientList({ q, page }: { q?: string; page: number }) {
                     <FlaskConical className="h-4 w-4 text-primary-600" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">{ingredient.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-sm">{ingredient.name}</p>
+                      {isOut && <Badge variant="destructive">Stok Habis</Badge>}
+                      {isLow && <Badge variant="warning">Stok Menipis</Badge>}
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      {ingredient.purchaseQty} {unitLabel} · <CurrencyDisplay amount={ingredient.purchasePrice} size="sm" />
+                      {INGREDIENT_CATEGORY_LABELS[ingredient.category]} · Stok: {ingredient.currentStock} {unitLabel}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Per {unitLabel}: <CurrencyDisplay amount={costPerUnit} size="sm" />
+                      Biaya rata-rata: <CurrencyDisplay amount={ingredient.averageCost} size="sm" />/{unitLabel}
                     </p>
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <CurrencyDisplay amount={ingredient.purchasePrice} size="sm" className="block text-primary-700 font-semibold" />
-                  <p className="text-xs text-muted-foreground mt-0.5">/{unitLabel}</p>
+                  <CurrencyDisplay
+                    amount={ingredient.currentStock * ingredient.averageCost}
+                    size="sm"
+                    className="block text-primary-700 font-semibold"
+                  />
+                  <p className="text-xs text-muted-foreground mt-0.5">nilai stok</p>
                 </div>
               </div>
             </Link>
@@ -88,7 +99,7 @@ export default async function BahanBakuPage({
     <>
       <PageHeader
         title="Bahan Baku"
-        description="Kelola bahan baku untuk perhitungan HPP otomatis"
+        description="Kelola stok dan biaya bahan baku secara otomatis untuk hitung HPP"
         actions={
           <Button asChild>
             <Link href="/bahan-baku/baru">

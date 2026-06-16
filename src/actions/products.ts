@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { productSchema } from "@/lib/validations/product";
 import { calculateHpp } from "@/lib/utils/hpp";
+import { calculateCapacity } from "@/lib/utils/production";
 import type { ActionResult } from "@/types";
 
 async function getStore() {
@@ -24,7 +25,16 @@ function serializeProduct<
   T extends {
     basePrice: unknown;
     variants: Array<{ priceAdjustment: unknown }>;
-    recipeItems: Array<{ quantity: unknown; ingredient: { purchaseQty: unknown; purchasePrice: unknown } }>;
+    recipeItems: Array<{
+      quantity: unknown;
+      ingredient: {
+        purchaseQty: unknown;
+        purchasePrice: unknown;
+        averageCost: unknown;
+        currentStock: unknown;
+        minimumStock: unknown;
+      };
+    }>;
   },
 >(p: T) {
   return {
@@ -38,6 +48,9 @@ function serializeProduct<
         ...ri.ingredient,
         purchaseQty: Number(ri.ingredient.purchaseQty),
         purchasePrice: Number(ri.ingredient.purchasePrice),
+        averageCost: Number(ri.ingredient.averageCost),
+        currentStock: Number(ri.ingredient.currentStock),
+        minimumStock: Number(ri.ingredient.minimumStock),
       },
     })),
   };
@@ -91,9 +104,14 @@ export async function getProduct(id: string) {
     include: {
       variants: true,
       recipeItems: { include: { ingredient: true } },
+      additionalCosts: true,
     },
   });
-  return row ? serializeProduct(row) : null;
+  if (!row) return null;
+  return {
+    ...serializeProduct(row),
+    additionalCosts: row.additionalCosts.map((c) => ({ ...c, amount: Number(c.amount) })),
+  };
 }
 
 export async function createProduct(data: {
@@ -172,17 +190,47 @@ export async function getProductHpp(productId: string): Promise<number> {
   const store = await getStore();
   const product = await prisma.product.findFirst({
     where: { id: productId, storeId: store.id },
-    include: { recipeItems: { include: { ingredient: true } } },
+    include: {
+      recipeItems: { include: { ingredient: true } },
+      additionalCosts: true,
+    },
   });
   if (!product) return 0;
 
   return calculateHpp(
     product.recipeItems.map((ri) => ({
       quantity: Number(ri.quantity),
-      ingredient: {
-        purchaseQty: Number(ri.ingredient.purchaseQty),
-        purchasePrice: Number(ri.ingredient.purchasePrice),
-      },
+      ingredient: { averageCost: Number(ri.ingredient.averageCost) },
+    })),
+    product.additionalCosts.map((c) => ({ amount: Number(c.amount) }))
+  );
+}
+
+export async function getProductCapacity(productId: string): Promise<number> {
+  const store = await getStore();
+  const product = await prisma.product.findFirst({
+    where: { id: productId, storeId: store.id },
+    include: { recipeItems: { include: { ingredient: true } } },
+  });
+  if (!product) return 0;
+
+  return calculateCapacity(
+    product.recipeItems.map((ri) => ({
+      quantity: Number(ri.quantity),
+      ingredient: { currentStock: Number(ri.ingredient.currentStock) },
     }))
   );
+}
+
+export async function getProductionRecords(productId: string) {
+  const store = await getStore();
+  const product = await prisma.product.findFirst({ where: { id: productId, storeId: store.id } });
+  if (!product) return [];
+
+  const rows = await prisma.productionRecord.findMany({
+    where: { productId },
+    include: { campaign: { select: { name: true } } },
+    orderBy: { productionDate: "desc" },
+  });
+  return rows.map((r) => ({ ...r, totalCost: Number(r.totalCost) }));
 }

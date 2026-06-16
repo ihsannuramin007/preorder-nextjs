@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { getIngredient } from "@/actions/ingredients";
-import { IngredientDetailClient } from "./ingredient-detail-client";
+import { PenyesuaianClient } from "./penyesuaian-client";
 
-export default async function BahanBakuDetailPage({
+export default async function SesuaikanStokPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -11,5 +11,5 @@ export default async function BahanBakuDetailPage({
   const ingredient = await getIngredient(id);
   if (!ingredient) notFound();
 
-  return <IngredientDetailClient ingredient={ingredient} />;
+  return <PenyesuaianClient ingredient={ingredient} />;
 }

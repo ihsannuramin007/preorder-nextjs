@@ -59,6 +59,32 @@ enum ProductCategory {
   OTHER
 }
 
+enum IngredientCategory {
+  BAHAN_UTAMA
+  BAHAN_TAMBAHAN
+  KEMASAN
+  OTHER
+}
+
+enum StockMovementType {
+  PURCHASE
+  DEDUCTION
+  ADJUSTMENT
+}
+
+enum StockAdjustmentReason {
+  CORRECTION
+  EXPIRED
+  LOST
+  DAMAGED
+  WASTE
+}
+
+enum ProductionRecordStatus {
+  COMPLETED
+  CANCELLED
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -109,12 +135,27 @@ model Product {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  store            Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  variants         ProductVariant[]
-  recipeItems      RecipeItem[]
-  campaignProducts CampaignProduct[]
+  store             Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  variants          ProductVariant[]
+  recipeItems       RecipeItem[]
+  campaignProducts  CampaignProduct[]
+  additionalCosts   AdditionalCost[]
+  productionRecords ProductionRecord[]
 
   @@map("products")
+}
+
+model AdditionalCost {
+  id        String   @id @default(cuid())
+  productId String
+  label     String
+  amount    Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("additional_costs")
 }
 
 model ProductVariant {
@@ -135,19 +176,44 @@ model ProductVariant {
 }
 
 model Ingredient {
-  id            String   @id @default(cuid())
+  id            String             @id @default(cuid())
   storeId       String
   name          String
+  category      IngredientCategory @default(OTHER)
   unit          Unit
-  purchaseQty   Decimal  @db.Decimal(12, 4)
-  purchasePrice Decimal  @db.Decimal(12, 2)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  supplier      String?
+  purchaseQty   Decimal            @db.Decimal(12, 4)
+  purchasePrice Decimal            @db.Decimal(12, 2)
+  currentStock  Decimal            @default(0) @db.Decimal(12, 4)
+  averageCost   Decimal            @default(0) @db.Decimal(12, 4)
+  minimumStock  Decimal            @default(0) @db.Decimal(12, 4)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
-  store       Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  recipeItems RecipeItem[]
+  store          Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  recipeItems    RecipeItem[]
+  stockMovements StockMovement[]
 
   @@map("ingredients")
+}
+
+model StockMovement {
+  id             String                 @id @default(cuid())
+  ingredientId   String
+  type           StockMovementType
+  reason         StockAdjustmentReason?
+  quantityChange Decimal                @db.Decimal(12, 4)
+  resultingStock Decimal                @db.Decimal(12, 4)
+  unitCost       Decimal?               @db.Decimal(12, 2)
+  note           String?
+  referenceId    String?
+  performedBy    String
+  createdAt      DateTime               @default(now())
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@index([ingredientId, createdAt])
+  @@map("stock_movements")
 }
 
 model RecipeItem {
@@ -176,11 +242,12 @@ model Campaign {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  store           Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  products        CampaignProduct[]
-  orders          Order[]
-  groupOrders     GroupOrder[]
-  productionSheet ProductionSheet?
+  store             Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products          CampaignProduct[]
+  orders            Order[]
+  groupOrders       GroupOrder[]
+  productionSheet   ProductionSheet?
+  productionRecords ProductionRecord[]
 
   @@map("campaigns")
 }
@@ -241,15 +308,35 @@ model OrderItem {
 }
 
 model ProductionSheet {
-  id          String   @id @default(cuid())
-  campaignId  String   @unique
-  generatedAt DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String    @id @default(cuid())
+  campaignId  String    @unique
+  generatedAt DateTime  @default(now())
+  startedAt   DateTime?
+  updatedAt   DateTime  @updatedAt
 
   campaign Campaign              @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   items    ProductionSheetItem[]
 
   @@map("production_sheets")
+}
+
+model ProductionRecord {
+  id             String                 @id @default(cuid())
+  productId      String
+  campaignId     String
+  quantity       Int
+  producedBy     String
+  productionDate DateTime               @default(now())
+  status         ProductionRecordStatus @default(COMPLETED)
+  totalCost      Decimal                @db.Decimal(12, 2)
+  createdAt      DateTime               @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([productId])
+  @@map("production_records")
 }
 
 model ProductionSheetItem {

@@ -1,88 +1,16 @@
-"use client";
+import { headers } from "next/headers";
+import { getPublicGroupOrder } from "@/actions/group-orders";
+import { RingkasanClient } from "./ringkasan-client";
 
-import { useState, useEffect, useTransition } from "react";
-import { useParams } from "next/navigation";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CurrencyDisplay } from "@/components/shared/currency-display";
-import { closeGroupOrder } from "@/actions/group-orders";
-import { Users, Copy, Lock, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+export default async function RingkasanPage({
+  params,
+}: {
+  params: Promise<{ slug: string; campaignId: string; sessionCode: string }>;
+}) {
+  const { slug, campaignId, sessionCode } = await params;
+  const groupOrder = await getPublicGroupOrder(sessionCode);
 
-type GroupData = {
-  id: string;
-  sessionCode: string;
-  facilitatorName: string;
-  facilitatorPhone: string;
-  facilitatorAddress: string;
-  facilitatorNotes: string | null;
-  status: "COLLECTING" | "CLOSED" | "CANCELLED";
-  totalAmount: number;
-  memberCount: number;
-  campaign: { id: string; name: string; products: unknown[] };
-};
-
-type MemberOrder = {
-  id: string;
-  memberName: string;
-  subtotal: number;
-  items: { id: string; productName: string; variantName: string | null; unitPrice: number; quantity: number; subtotal: number }[];
-};
-
-export default function RingkasanPage() {
-  const params = useParams();
-  const slug = params.slug as string;
-  const campaignId = params.campaignId as string;
-  const sessionCode = params.sessionCode as string;
-  const [isPending, startTransition] = useTransition();
-  const [group, setGroup] = useState<GroupData | null>(null);
-  const [members, setMembers] = useState<MemberOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedMember, setExpandedMember] = useState<string | null>(null);
-
-  async function loadData() {
-    const [groupRes, membersRes] = await Promise.all([
-      fetch(`/api/group-orders/${sessionCode}`).then((r) => r.json()),
-      fetch(`/api/group-orders/${sessionCode}/members`).then((r) => r.json()),
-    ]);
-    if (!groupRes.error) setGroup(groupRes);
-    if (!membersRes.error) setMembers(membersRes);
-    setLoading(false);
-  }
-
-  useEffect(() => { loadData(); }, [sessionCode]);
-
-  const memberLink =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/${slug}/pesan/${campaignId}/grup/${sessionCode}`
-      : "";
-
-  function copyLink() {
-    navigator.clipboard.writeText(memberLink);
-    toast.success("Link berhasil disalin!");
-  }
-
-  function handleClose() {
-    startTransition(async () => {
-      const result = await closeGroupOrder(sessionCode);
-      if (result.success) {
-        toast.success("Sesi ditutup. Anggota tidak bisa pesan lagi.");
-        await loadData();
-      } else {
-        toast.error(result.error);
-      }
-    });
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Memuat...</div>
-      </div>
-    );
-  }
-
-  if (!group) {
+  if (!groupOrder) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <p className="text-muted-foreground">Sesi tidak ditemukan.</p>
@@ -90,125 +18,38 @@ export default function RingkasanPage() {
     );
   }
 
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const memberLink = `${protocol}://${host}/${slug}/pesan/${campaignId}/grup/${sessionCode}`;
+
+  const group = {
+    id: groupOrder.id,
+    sessionCode: groupOrder.sessionCode,
+    facilitatorName: groupOrder.facilitatorName,
+    facilitatorPhone: groupOrder.facilitatorPhone,
+    facilitatorAddress: groupOrder.facilitatorAddress,
+    facilitatorNotes: groupOrder.facilitatorNotes,
+    status: groupOrder.status,
+    totalAmount: Number(groupOrder.totalAmount),
+    campaign: { id: groupOrder.campaign!.id, name: groupOrder.campaign!.name },
+  };
+
+  const members = (groupOrder.memberOrders ?? []).map((m) => ({
+    id: m.id,
+    memberName: m.memberName,
+    subtotal: Number(m.subtotal),
+    items: (m.items ?? []).map((i) => ({
+      id: i.id,
+      productName: i.productName,
+      variantName: i.variantName,
+      unitPrice: Number(i.unitPrice),
+      quantity: i.quantity,
+      subtotal: Number(i.subtotal),
+    })),
+  }));
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-xl mx-auto px-4 py-8 space-y-4">
-        <div className="flex items-center gap-3 mb-2">
-          <Users className="h-6 w-6 text-primary-600" />
-          <div>
-            <h1 className="text-xl font-bold">Ringkasan Group Order</h1>
-            <p className="text-sm text-muted-foreground">{group.campaign.name}</p>
-          </div>
-        </div>
-
-        {/* Status banner */}
-        {group.status === "COLLECTING" ? (
-          <div className="rounded-card border border-primary-200 bg-primary-50 p-3 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
-            <span className="text-sm text-primary-800 font-medium">Sesi terbuka — anggota masih bisa bergabung</span>
-          </div>
-        ) : (
-          <div className="rounded-card border border-green-200 bg-green-50 p-3 flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <span className="text-sm text-green-800 font-medium">Sesi ditutup</span>
-          </div>
-        )}
-
-        {/* Info bos */}
-        <Card>
-          <CardHeader><CardTitle className="text-base">Info Penanggung Tagihan</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Nama</span><span className="font-medium">{group.facilitatorName}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">HP</span><span>{group.facilitatorPhone}</span></div>
-            <div className="flex justify-between gap-4"><span className="text-muted-foreground flex-shrink-0">Alamat</span><span className="text-right">{group.facilitatorAddress}</span></div>
-            {group.facilitatorNotes && (
-              <div className="flex justify-between gap-4"><span className="text-muted-foreground flex-shrink-0">Catatan</span><span className="text-right">{group.facilitatorNotes}</span></div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Total */}
-        <div className="flex justify-between items-center rounded-card border border-border bg-white p-4">
-          <div>
-            <p className="font-semibold">Total Tagihan Bos</p>
-            <p className="text-xs text-muted-foreground">{members.length} anggota · {members.reduce((s, m) => s + m.items.reduce((si, i) => si + i.quantity, 0), 0)} item</p>
-          </div>
-          <CurrencyDisplay amount={group.totalAmount} size="lg" className="text-primary-700 font-bold" />
-        </div>
-
-        {/* Link karyawan */}
-        {group.status === "COLLECTING" && (
-          <Card>
-            <CardHeader><CardTitle className="text-base">Bagikan Link ke Anggota</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 p-3">
-                <span className="text-xs text-muted-foreground flex-1 break-all">{memberLink}</span>
-              </div>
-              <Button onClick={copyLink} variant="outline" className="w-full">
-                <Copy className="h-4 w-4 mr-2" />
-                Salin Link
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* List member */}
-        {members.length > 0 && (
-          <Card>
-            <CardHeader><CardTitle className="text-base">Pesanan Anggota ({members.length})</CardTitle></CardHeader>
-            <CardContent className="divide-y">
-              {members.map((m) => (
-                <div key={m.id} className="py-3">
-                  <button
-                    type="button"
-                    className="w-full flex items-center justify-between text-left"
-                    onClick={() => setExpandedMember(expandedMember === m.id ? null : m.id)}
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{m.memberName}</p>
-                      <p className="text-xs text-muted-foreground">{m.items.length} item</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CurrencyDisplay amount={m.subtotal} size="sm" className="text-primary-700" />
-                      {expandedMember === m.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </div>
-                  </button>
-                  {expandedMember === m.id && (
-                    <div className="mt-2 space-y-1">
-                      {m.items.map((item) => (
-                        <div key={item.id} className="flex justify-between text-sm text-muted-foreground pl-2">
-                          <span>{item.productName}{item.variantName ? ` · ${item.variantName}` : ""} ×{item.quantity}</span>
-                          <CurrencyDisplay amount={item.subtotal} size="sm" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {members.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Users className="h-10 w-10 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Belum ada yang pesan. Bagikan link di atas ke anggota.</p>
-          </div>
-        )}
-
-        {/* Tutup sesi */}
-        {group.status === "COLLECTING" && (
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={handleClose}
-            disabled={isPending}
-          >
-            <Lock className="h-4 w-4 mr-2" />
-            {isPending ? "Menutup..." : "Tutup Sesi (Tidak Bisa Dibuka Kembali)"}
-          </Button>
-        )}
-      </div>
-    </div>
+    <RingkasanClient group={group} members={members} memberLink={memberLink} sessionCode={sessionCode} />
   );
 }

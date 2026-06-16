@@ -1,14 +1,14 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProductionSheet } from "@/actions/production";
-import { generateProductionSheet } from "@/actions/production";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { UNIT_LABELS } from "@/lib/constants/units";
-import { ArrowLeft, Factory } from "lucide-react";
+import { ArrowLeft, Factory, CheckCircle2, AlertTriangle } from "lucide-react";
 import { GenerateSheetButton } from "./generate-sheet-button";
+import { StartProductionButton } from "./start-production-button";
 
 export default async function ProduksiPage({
   params,
@@ -28,7 +28,8 @@ export default async function ProduksiPage({
             <Button variant="ghost" asChild>
               <Link href={`/periode-po/${id}`}><ArrowLeft className="h-4 w-4 mr-1" />Kembali</Link>
             </Button>
-            <GenerateSheetButton campaignId={id} />
+            {!sheet?.startedAt && <GenerateSheetButton campaignId={id} />}
+            {sheet && <StartProductionButton campaignId={id} started={!!sheet.startedAt} />}
           </div>
         }
       />
@@ -46,6 +47,49 @@ export default async function ProduksiPage({
         </Card>
       ) : (
         <div className="space-y-4">
+          {sheet.items.length > 0 && (
+            <Alert variant={sheet.availability.ready ? "success" : "warning"}>
+              {sheet.availability.ready ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <AlertTriangle className="h-4 w-4" />
+              )}
+              <AlertTitle>{sheet.availability.ready ? "Siap Produksi" : "Bahan Kurang"}</AlertTitle>
+              <AlertDescription>
+                {sheet.availability.ready ? (
+                  "Semua bahan baku tersedia untuk memulai produksi."
+                ) : (
+                  <ul className="space-y-1">
+                    {sheet.availability.missing.map((m) => (
+                      <li key={m.ingredientId} className="flex items-center justify-between">
+                        <span>
+                          {m.ingredientName} (kurang {m.shortBy.toFixed(2)} {UNIT_LABELS[m.unit]})
+                        </span>
+                        <Link
+                          href={`/bahan-baku/${m.ingredientId}/pembelian`}
+                          className="underline font-medium"
+                        >
+                          Catat Pembelian
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {sheet.startedAt && (
+            <Alert variant="default">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>Produksi Sudah Dimulai</AlertTitle>
+              <AlertDescription>
+                Stok bahan baku sudah dikurangi dan riwayat produksi telah dicatat pada{" "}
+                {new Date(sheet.startedAt).toLocaleDateString("id-ID")}.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
