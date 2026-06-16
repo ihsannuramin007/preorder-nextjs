@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { productSchema } from "@/lib/validations/product";
 import { calculateHpp } from "@/lib/utils/hpp";
 import { calculateCapacity } from "@/lib/utils/production";
 import type { ActionResult } from "@/types";
@@ -24,7 +23,6 @@ async function getStore() {
 function serializeProduct<
   T extends {
     basePrice: unknown;
-    variants: Array<{ priceAdjustment: unknown }>;
     recipeItems: Array<{
       quantity: unknown;
       ingredient: {
@@ -40,7 +38,6 @@ function serializeProduct<
   return {
     ...p,
     basePrice: Number(p.basePrice),
-    variants: p.variants.map((v) => ({ ...v, priceAdjustment: Number(v.priceAdjustment) })),
     recipeItems: p.recipeItems.map((ri) => ({
       ...ri,
       quantity: Number(ri.quantity),
@@ -60,7 +57,7 @@ export async function getProducts() {
   const store = await getStore();
   const rows = await prisma.product.findMany({
     where: { storeId: store.id },
-    include: { variants: true, recipeItems: { include: { ingredient: true } } },
+    include: { recipeItems: { include: { ingredient: true } } },
     orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
   });
   return rows.map(serializeProduct);
@@ -86,7 +83,7 @@ export async function getProductsList(filters?: {
   const [rows, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      include: { variants: true, recipeItems: { include: { ingredient: true } } },
+      include: { recipeItems: { include: { ingredient: true } } },
       orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
       skip,
       take: pageSize,
@@ -102,7 +99,6 @@ export async function getProduct(id: string) {
   const row = await prisma.product.findFirst({
     where: { id, storeId: store.id },
     include: {
-      variants: true,
       recipeItems: { include: { ingredient: true } },
       additionalCosts: true,
     },
@@ -121,7 +117,6 @@ export async function createProduct(data: {
   category: string;
   basePrice: number;
   status: string;
-  variants: { name: string; priceAdjustment: number; sku?: string }[];
 }): Promise<ActionResult<{ id: string }>> {
   try {
     const store = await getStore();
@@ -134,13 +129,6 @@ export async function createProduct(data: {
         category: data.category as any,
         basePrice: data.basePrice,
         status: data.status as any,
-        variants: {
-          create: data.variants.map((v) => ({
-            name: v.name,
-            priceAdjustment: v.priceAdjustment,
-            sku: v.sku,
-          })),
-        },
       },
     });
     revalidatePath("/produk");

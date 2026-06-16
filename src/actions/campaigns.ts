@@ -19,10 +19,10 @@ async function getStore() {
   return dbUser.store;
 }
 
-import type { CampaignProduct, Product, ProductVariant, Order, OrderItem } from "@prisma/client";
+import type { CampaignProduct, Product, Order, OrderItem } from "@prisma/client";
 
 function serializeCampaignProduct<
-  T extends CampaignProduct & { product: (Product & { variants?: ProductVariant[] }) | null },
+  T extends CampaignProduct & { product: Product | null },
 >(cp: T) {
   return {
     ...cp,
@@ -30,10 +30,6 @@ function serializeCampaignProduct<
       ? {
           ...cp.product,
           basePrice: Number(cp.product.basePrice),
-          variants: cp.product.variants?.map((v) => ({
-            ...v,
-            priceAdjustment: Number(v.priceAdjustment),
-          })),
         }
       : cp.product,
   };
@@ -91,7 +87,7 @@ export async function getCampaign(id: string) {
   const c = await prisma.campaign.findFirst({
     where: { id, storeId: store.id },
     include: {
-      products: { include: { product: { include: { variants: true } } } },
+      products: { include: { product: true } },
       orders: { include: { items: true } },
     },
   });

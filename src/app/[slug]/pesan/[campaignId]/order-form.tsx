@@ -22,7 +22,6 @@ type CampaignData = {
       name: string;
       basePrice: number;
       imageUrl: string | null;
-      variants: { id: string; name: string; priceAdjustment: number }[];
     };
   }[];
 };
@@ -48,28 +47,21 @@ export function OrderForm({
 
   const orderItems = Object.entries(quantities)
     .filter(([, qty]) => qty > 0)
-    .map(([variantId, quantity]) => ({ variantId, quantity }));
+    .map(([productId, quantity]) => ({ productId, quantity }));
 
   const total = orderItems.reduce((sum, item) => {
-    let price = 0;
-    for (const cp of campaign.products) {
-      const variant = cp.product.variants.find((v) => v.id === item.variantId);
-      if (variant) {
-        price = cp.product.basePrice + variant.priceAdjustment;
-        break;
-      }
-    }
-    return sum + price * item.quantity;
+    const cp = campaign.products.find((cp) => cp.product.id === item.productId);
+    return sum + (cp ? cp.product.basePrice * item.quantity : 0);
   }, 0);
 
-  function handleQty(variantId: string, delta: number) {
+  function handleQty(productId: string, delta: number) {
     setQuantities((prev) => {
-      const next = (prev[variantId] ?? 0) + delta;
+      const next = (prev[productId] ?? 0) + delta;
       if (next <= 0) {
-        const { [variantId]: _, ...rest } = prev;
+        const { [productId]: _, ...rest } = prev;
         return rest;
       }
-      return { ...prev, [variantId]: next };
+      return { ...prev, [productId]: next };
     });
   }
 
@@ -102,43 +94,42 @@ export function OrderForm({
           <CardTitle className="text-base">Pilih Produk</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {campaign.products.map((cp) => (
-            <div key={cp.product.id} className="border-b last:border-0 pb-4 last:pb-0">
-              <p className="font-semibold mb-2">{cp.product.name}</p>
-              <div className="space-y-2">
-                {cp.product.variants.map((v) => {
-                  const price = cp.product.basePrice + v.priceAdjustment;
-                  const qty = quantities[v.id] ?? 0;
-                  return (
-                    <div key={v.id} className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm">{v.name}</p>
-                        <CurrencyDisplay amount={price} size="sm" className="text-primary-700 font-medium" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleQty(v.id, -1)}
-                          disabled={qty === 0}
-                          className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-sm disabled:opacity-40"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="w-6 text-center text-sm font-medium">{qty}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleQty(v.id, 1)}
-                          className="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+          {campaign.products.map((cp) => {
+            const qty = quantities[cp.product.id] ?? 0;
+            return (
+              <div
+                key={cp.product.id}
+                className="flex items-center justify-between gap-3 border-b last:border-0 pb-4 last:pb-0"
+              >
+                <div>
+                  <p className="font-semibold">{cp.product.name}</p>
+                  <CurrencyDisplay
+                    amount={cp.product.basePrice}
+                    size="sm"
+                    className="text-primary-700 font-medium"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleQty(cp.product.id, -1)}
+                    disabled={qty === 0}
+                    className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-sm disabled:opacity-40"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span className="w-6 text-center text-sm font-medium">{qty}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleQty(cp.product.id, 1)}
+                    className="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 

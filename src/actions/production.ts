@@ -29,13 +29,9 @@ async function fetchQualifyingOrders(campaignId: string, storeId: string) {
         include: {
           items: {
             include: {
-              variant: {
+              product: {
                 include: {
-                  product: {
-                    include: {
-                      recipeItems: { include: { ingredient: true } },
-                    },
-                  },
+                  recipeItems: { include: { ingredient: true } },
                 },
               },
             },
@@ -66,19 +62,17 @@ export async function generateProductionSheet(
     const allItems = campaign.orders.flatMap((o) =>
       o.items.map((item) => ({
         quantity: item.quantity,
-        variant: item.variant
+        product: item.product
           ? {
-              product: {
-                recipeItems: item.variant.product.recipeItems.map((ri) => ({
-                  quantity: Number(ri.quantity),
-                  ingredient: {
-                    id: ri.ingredient.id,
-                    name: ri.ingredient.name,
-                    unit: ri.ingredient.unit,
-                    averageCost: Number(ri.ingredient.averageCost),
-                  },
-                })),
-              },
+              recipeItems: item.product.recipeItems.map((ri) => ({
+                quantity: Number(ri.quantity),
+                ingredient: {
+                  id: ri.ingredient.id,
+                  name: ri.ingredient.name,
+                  unit: ri.ingredient.unit,
+                  averageCost: Number(ri.ingredient.averageCost),
+                },
+              })),
             }
           : null,
       }))
@@ -168,8 +162,8 @@ export async function startProduction(
     const productQuantities = new Map<string, number>();
     for (const order of campaign.orders) {
       for (const item of order.items) {
-        if (!item.variant) continue;
-        const pid = item.variant.product.id;
+        if (!item.product) continue;
+        const pid = item.product.id;
         productQuantities.set(pid, (productQuantities.get(pid) ?? 0) + item.quantity);
       }
     }

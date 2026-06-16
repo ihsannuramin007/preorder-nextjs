@@ -52,7 +52,7 @@ export default async function PublicStorePage({
         },
         include: {
           products: {
-            include: { product: { include: { variants: true } } },
+            include: { product: true },
           },
         },
         orderBy: { closeDate: "asc" },

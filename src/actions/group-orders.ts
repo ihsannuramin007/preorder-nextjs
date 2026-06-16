@@ -57,7 +57,7 @@ export async function createGroupOrder(data: {
 export async function addMemberOrder(
   sessionCode: string,
   memberName: string,
-  items: { variantId: string; quantity: number }[]
+  items: { productId: string; quantity: number }[]
 ): Promise<ActionResult<{ memberName: string }>> {
   try {
     const groupOrder = await prisma.groupOrder.findUnique({
@@ -71,30 +71,27 @@ export async function addMemberOrder(
 
     let memberSubtotal = 0;
     const itemsWithPrice: {
-      variantId: string;
+      productId: string;
       productName: string;
-      variantName: string;
       unitPrice: number;
       quantity: number;
       subtotal: number;
     }[] = [];
 
     for (const item of items) {
-      const variant = await prisma.productVariant.findUnique({
-        where: { id: item.variantId },
-        include: { product: true },
+      const product = await prisma.product.findUnique({
+        where: { id: item.productId },
       });
 
-      if (!variant || !variant.isActive) continue;
+      if (!product) continue;
 
-      const unitPrice = Number(variant.product.basePrice) + Number(variant.priceAdjustment);
+      const unitPrice = Number(product.basePrice);
       const subtotal = unitPrice * item.quantity;
       memberSubtotal += subtotal;
 
       itemsWithPrice.push({
-        variantId: item.variantId,
-        productName: variant.product.name,
-        variantName: variant.name,
+        productId: item.productId,
+        productName: product.name,
         unitPrice,
         quantity: item.quantity,
         subtotal,
@@ -111,9 +108,8 @@ export async function addMemberOrder(
           subtotal: memberSubtotal,
           items: {
             create: itemsWithPrice.map((i) => ({
-              variantId: i.variantId,
+              productId: i.productId,
               productName: i.productName,
-              variantName: i.variantName,
               unitPrice: i.unitPrice,
               quantity: i.quantity,
               subtotal: i.subtotal,
@@ -141,13 +137,13 @@ export async function addMemberOrder(
 
 import type {
   GroupOrder, GroupMemberOrder, GroupMemberOrderItem,
-  Campaign, CampaignProduct, Product, ProductVariant,
+  Campaign, CampaignProduct, Product,
 } from "@prisma/client";
 
 type FullGroupOrder = GroupOrder & {
   campaign?: (Campaign & {
     products?: (CampaignProduct & {
-      product: (Product & { variants?: ProductVariant[] }) | null;
+      product: Product | null;
     })[];
   }) | null;
   memberOrders?: (GroupMemberOrder & { items?: GroupMemberOrderItem[] })[];
@@ -166,10 +162,6 @@ function serializeGroupOrder<T extends FullGroupOrder>(g: T) {
               ? {
                   ...cp.product,
                   basePrice: Number(cp.product.basePrice),
-                  variants: cp.product.variants?.map((v) => ({
-                    ...v,
-                    priceAdjustment: Number(v.priceAdjustment),
-                  })),
                 }
               : cp.product,
           })),
@@ -194,13 +186,7 @@ export async function getPublicGroupOrder(sessionCode: string) {
       campaign: {
         include: {
           products: {
-            include: {
-              product: {
-                include: {
-                  variants: { where: { isActive: true } },
-                },
-              },
-            },
+            include: { product: true },
           },
         },
       },

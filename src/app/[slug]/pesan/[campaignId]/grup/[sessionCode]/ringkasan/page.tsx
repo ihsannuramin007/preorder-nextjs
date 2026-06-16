@@ -42,7 +42,6 @@ export default async function RingkasanPage({
     items: (m.items ?? []).map((i) => ({
       id: i.id,
       productName: i.productName,
-      variantName: i.variantName,
       unitPrice: Number(i.unitPrice),
       quantity: i.quantity,
       subtotal: Number(i.subtotal),

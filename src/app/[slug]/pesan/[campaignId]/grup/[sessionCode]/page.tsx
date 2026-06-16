@@ -35,11 +35,6 @@ export default async function MemberOrderPage({
           name: cp.product!.name,
           basePrice: Number(cp.product!.basePrice),
           imageUrl: cp.product!.imageUrl,
-          variants: (cp.product!.variants ?? []).map((v) => ({
-            id: v.id,
-            name: v.name,
-            priceAdjustment: Number(v.priceAdjustment),
-          })),
         },
       })),
     },

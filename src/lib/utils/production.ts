@@ -2,18 +2,16 @@ import { Unit } from "@prisma/client";
 
 type OrderItemWithRecipe = {
   quantity: number;
-  variant?: {
-    product: {
-      recipeItems: {
-        quantity: number;
-        ingredient: {
-          id: string;
-          name: string;
-          unit: Unit;
-          averageCost: number;
-        };
-      }[];
-    };
+  product?: {
+    recipeItems: {
+      quantity: number;
+      ingredient: {
+        id: string;
+        name: string;
+        unit: Unit;
+        averageCost: number;
+      };
+    }[];
   } | null;
 };
 
@@ -46,7 +44,7 @@ export function generateProductionNeeds(
   const map = new Map<string, IngredientNeed>();
 
   for (const item of orderItems) {
-    const recipe = item.variant?.product?.recipeItems ?? [];
+    const recipe = item.product?.recipeItems ?? [];
     for (const ri of recipe) {
       const { ingredient } = ri;
       const qty = ri.quantity * item.quantity;

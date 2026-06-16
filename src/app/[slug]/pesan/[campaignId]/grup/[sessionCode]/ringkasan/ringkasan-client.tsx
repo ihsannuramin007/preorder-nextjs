@@ -25,7 +25,7 @@ type MemberOrder = {
   id: string;
   memberName: string;
   subtotal: number;
-  items: { id: string; productName: string; variantName: string | null; unitPrice: number; quantity: number; subtotal: number }[];
+  items: { id: string; productName: string; unitPrice: number; quantity: number; subtotal: number }[];
 };
 
 export function RingkasanClient({
@@ -142,7 +142,7 @@ export function RingkasanClient({
                     <div className="mt-2 space-y-1">
                       {m.items.map((item) => (
                         <div key={item.id} className="flex justify-between text-sm text-muted-foreground pl-2">
-                          <span>{item.productName}{item.variantName ? ` · ${item.variantName}` : ""} ×{item.quantity}</span>
+                          <span>{item.productName} ×{item.quantity}</span>
                           <CurrencyDisplay amount={item.subtotal} size="sm" />
                         </div>
                       ))}

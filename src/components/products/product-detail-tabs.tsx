@@ -103,30 +103,6 @@ export function ProductDetailTabs({
           </CardContent>
         </Card>
 
-        {product.variants.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Varian</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {product.variants.map((v) => (
-                  <div
-                    key={v.id}
-                    className="flex justify-between py-2 border-b border-[#E5E7EB] last:border-0"
-                  >
-                    <span className="text-sm font-semibold text-[#111111]">{v.name}</span>
-                    <span className="text-sm text-[#9A9A9A]">
-                      {Number(v.priceAdjustment) >= 0 ? "+" : ""}
-                      <CurrencyDisplay amount={Number(v.priceAdjustment)} size="sm" />
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">

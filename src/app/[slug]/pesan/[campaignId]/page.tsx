@@ -18,10 +18,6 @@ async function getCampaign(slug: string, campaignId: string) {
               name: true,
               basePrice: true,
               imageUrl: true,
-              variants: {
-                where: { isActive: true },
-                select: { id: true, name: true, priceAdjustment: true },
-              },
             },
           },
         },
@@ -39,10 +35,6 @@ async function getCampaign(slug: string, campaignId: string) {
       product: {
         ...cp.product,
         basePrice: Number(cp.product.basePrice),
-        variants: cp.product.variants.map((v) => ({
-          ...v,
-          priceAdjustment: Number(v.priceAdjustment),
-        })),
       },
     })),
   };

@@ -104,7 +104,6 @@ export default async function PesananDetailPage({
                   <div key={item.id} className="flex justify-between py-1.5 border-b last:border-0 text-sm">
                     <div>
                       <p className="font-medium">{item.productName}</p>
-                      {item.variantName && <p className="text-xs text-muted-foreground">{item.variantName}</p>}
                       <p className="text-xs text-muted-foreground">x{item.quantity}</p>
                     </div>
                     <CurrencyDisplay amount={Number(item.subtotal)} size="sm" />

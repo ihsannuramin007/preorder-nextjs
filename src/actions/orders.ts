@@ -99,7 +99,7 @@ export async function createPublicOrder(data: {
   customerPhone: string;
   customerAddress: string;
   customerNotes?: string;
-  items: { variantId: string; quantity: number }[];
+  items: { productId: string; quantity: number }[];
 }): Promise<ActionResult<{ orderNumber: string }>> {
   try {
     const campaign = await prisma.campaign.findUnique({
@@ -118,28 +118,23 @@ export async function createPublicOrder(data: {
 
     const orderItems = await Promise.all(
       data.items.map(async (item) => {
-        const variant = await prisma.productVariant.findUnique({
-          where: { id: item.variantId },
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
           include: {
-            product: {
-              include: {
-                recipeItems: { include: { ingredient: true } },
-                additionalCosts: true,
-              },
-            },
+            recipeItems: { include: { ingredient: true } },
+            additionalCosts: true,
           },
         });
 
-        if (!variant) throw new Error("Varian tidak ditemukan");
+        if (!product) throw new Error("Produk tidak ditemukan");
 
-        const unitPrice =
-          Number(variant.product.basePrice) + Number(variant.priceAdjustment);
+        const unitPrice = Number(product.basePrice);
         const unitHpp = calculateHpp(
-          variant.product.recipeItems.map((ri) => ({
+          product.recipeItems.map((ri) => ({
             quantity: Number(ri.quantity),
             ingredient: { averageCost: Number(ri.ingredient.averageCost) },
           })),
-          variant.product.additionalCosts.map((c) => ({ amount: Number(c.amount) }))
+          product.additionalCosts.map((c) => ({ amount: Number(c.amount) }))
         );
         const subtotal = unitPrice * item.quantity;
 
@@ -147,9 +142,8 @@ export async function createPublicOrder(data: {
         totalHpp += unitHpp * item.quantity;
 
         return {
-          variantId: item.variantId,
-          productName: variant.product.name,
-          variantName: variant.name,
+          productId: item.productId,
+          productName: product.name,
           unitPrice,
           unitHpp,
           quantity: item.quantity,

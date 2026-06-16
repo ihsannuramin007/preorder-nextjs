@@ -32,14 +32,14 @@ export default async function GroupOrderDetailPage({
   const consolidatedMap = new Map<string, { name: string; qty: number; subtotal: number }>();
   for (const member of groupOrder.memberOrders) {
     for (const item of member.items) {
-      const key = `${item.productName}|${item.variantName ?? ""}`;
+      const key = item.productName;
       const existing = consolidatedMap.get(key);
       if (existing) {
         existing.qty += item.quantity;
         existing.subtotal += Number(item.subtotal);
       } else {
         consolidatedMap.set(key, {
-          name: item.variantName ? `${item.productName} · ${item.variantName}` : item.productName,
+          name: item.productName,
           qty: item.quantity,
           subtotal: Number(item.subtotal),
         });
@@ -83,9 +83,7 @@ export default async function GroupOrderDetailPage({
                       {member.items.map((item) => (
                         <div key={item.id} className="flex justify-between text-xs text-muted-foreground pl-2">
                           <span>
-                            {item.productName}
-                            {item.variantName && ` · ${item.variantName}`}
-                            {" "}×{item.quantity}
+                            {item.productName} ×{item.quantity}
                           </span>
                           <CurrencyDisplay amount={Number(item.subtotal)} size="sm" />
                         </div>
