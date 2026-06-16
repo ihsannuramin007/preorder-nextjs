@@ -100,7 +100,7 @@ export async function createPublicOrder(data: {
   customerAddress: string;
   customerNotes?: string;
   items: { productId: string; quantity: number }[];
-}): Promise<ActionResult<{ orderNumber: string }>> {
+}): Promise<ActionResult<{ orderNumber: string; orderId: string }>> {
   try {
     const campaign = await prisma.campaign.findUnique({
       where: { id: data.campaignId },
@@ -166,10 +166,40 @@ export async function createPublicOrder(data: {
       },
     });
 
-    return { success: true, data: { orderNumber: order.orderNumber } };
+    return { success: true, data: { orderNumber: order.orderNumber, orderId: order.id } };
   } catch (e) {
     return { success: false, error: "Terjadi kesalahan saat membuat pesanan" };
   }
+}
+
+export async function getPublicOrder(orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: true,
+      campaign: { include: { store: { select: { name: true, slug: true, whatsapp: true } } } },
+    },
+  });
+  if (!order) return null;
+
+  return {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    customerName: order.customerName,
+    customerPhone: order.customerPhone,
+    status: order.status,
+    totalAmount: Number(order.totalAmount),
+    paymentProofUrl: order.paymentProofUrl,
+    rejectionReason: order.rejectionReason,
+    createdAt: order.createdAt,
+    items: order.items.map((item) => ({
+      id: item.id,
+      productName: item.productName,
+      quantity: item.quantity,
+      subtotal: Number(item.subtotal),
+    })),
+    store: order.campaign.store,
+  };
 }
 
 export async function updateOrderStatus(

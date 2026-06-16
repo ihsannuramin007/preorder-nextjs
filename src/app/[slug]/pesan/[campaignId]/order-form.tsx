@@ -80,7 +80,7 @@ export function OrderForm({
       });
 
       if (result.success) {
-        router.push(`/${slug}/pesan/${campaignId}/sukses?no=${result.data.orderNumber}`);
+        router.push(`/${slug}/pesan/${campaignId}/sukses?id=${result.data.orderId}`);
       } else {
         toast.error(result.error);
       }
