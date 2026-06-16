@@ -41,7 +41,7 @@ export function PaymentProofUpload({
       }
 
       startTransition(async () => {
-        const updateResult = await uploadPaymentProof(orderId, result.url);
+        const updateResult = await uploadPaymentProof(orderId, result.path);
         if (updateResult.success) {
           toast.success("Bukti pembayaran terkirim!");
           onUploaded();

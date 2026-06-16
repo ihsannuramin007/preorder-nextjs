@@ -3,8 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/types";
+
+const PAYMENT_PROOF_BUCKET =
+  process.env.NEXT_PUBLIC_STORAGE_BUCKET_PAYMENTS ?? "payment-proofs";
+
+function extractStoragePath(value: string): string {
+  if (!value.startsWith("http")) return value;
+  const marker = `/object/public/${PAYMENT_PROOF_BUCKET}/`;
+  const idx = value.indexOf(marker);
+  if (idx === -1) return value;
+  return decodeURIComponent(value.slice(idx + marker.length));
+}
 
 async function getStore() {
   const supabase = await createClient();
@@ -28,6 +40,38 @@ export async function approvePayment(orderId: string): Promise<ActionResult> {
     revalidatePath("/pesanan");
     revalidatePath(`/pesanan/${orderId}`);
     return { success: true, data: undefined };
+  } catch {
+    return { success: false, error: "Terjadi kesalahan" };
+  }
+}
+
+export async function getPaymentProofUrl(
+  orderId: string
+): Promise<ActionResult<{ url: string; isPdf: boolean }>> {
+  try {
+    const store = await getStore();
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, campaign: { storeId: store.id } },
+      select: { paymentProofUrl: true },
+    });
+    if (!order?.paymentProofUrl) {
+      return { success: false, error: "Bukti pembayaran tidak ditemukan" };
+    }
+
+    const path = extractStoragePath(order.paymentProofUrl);
+    const admin = createAdminClient();
+    const { data, error } = await admin.storage
+      .from(PAYMENT_PROOF_BUCKET)
+      .createSignedUrl(path, 300);
+
+    if (error || !data) {
+      return { success: false, error: "Gagal memuat bukti pembayaran" };
+    }
+
+    return {
+      success: true,
+      data: { url: data.signedUrl, isPdf: /\.pdf$/i.test(path) },
+    };
   } catch {
     return { success: false, error: "Terjadi kesalahan" };
   }

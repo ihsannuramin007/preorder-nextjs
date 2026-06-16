@@ -8,8 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { approvePayment, rejectPayment } from "@/actions/payments";
-import { CheckCircle, XCircle, Eye } from "lucide-react";
+import { approvePayment, rejectPayment, getPaymentProofUrl } from "@/actions/payments";
+import { CheckCircle, XCircle, Eye, Loader2 } from "lucide-react";
 type PaymentVerificationProps = { orderId: string; paymentProofUrl: string | null };
 
 export function PaymentVerification({ orderId, paymentProofUrl }: PaymentVerificationProps) {
@@ -18,6 +18,20 @@ export function PaymentVerification({ orderId, paymentProofUrl }: PaymentVerific
   const [rejectOpen, setRejectOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [proofOpen, setProofOpen] = useState(false);
+  const [proofLoading, setProofLoading] = useState(false);
+  const [signedProof, setSignedProof] = useState<{ url: string; isPdf: boolean } | null>(null);
+
+  async function handleViewProof() {
+    setProofOpen(true);
+    setProofLoading(true);
+    const result = await getPaymentProofUrl(orderId);
+    if (result.success) {
+      setSignedProof(result.data);
+    } else {
+      toast.error(result.error);
+    }
+    setProofLoading(false);
+  }
 
   function handleApprove() {
     startTransition(async () => {
@@ -56,7 +70,7 @@ export function PaymentVerification({ orderId, paymentProofUrl }: PaymentVerific
         </CardHeader>
         <CardContent className="space-y-3">
           {paymentProofUrl ? (
-            <Button variant="outline" size="sm" onClick={() => setProofOpen(true)}>
+            <Button variant="outline" size="sm" onClick={handleViewProof}>
               <Eye className="h-4 w-4 mr-1" />
               Lihat Bukti Pembayaran
             </Button>
@@ -82,27 +96,43 @@ export function PaymentVerification({ orderId, paymentProofUrl }: PaymentVerific
       </Card>
 
       {paymentProofUrl && (
-        <Dialog open={proofOpen} onOpenChange={setProofOpen}>
+        <Dialog
+          open={proofOpen}
+          onOpenChange={(open) => {
+            setProofOpen(open);
+            if (!open) setSignedProof(null);
+          }}
+        >
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Bukti Pembayaran</DialogTitle>
             </DialogHeader>
             <div className="rounded-lg overflow-hidden border border-border">
-              {paymentProofUrl.match(/\.(jpg|jpeg|png)$/i) ? (
-                <img
-                  src={paymentProofUrl}
-                  alt="Bukti pembayaran"
-                  className="w-full max-h-[70vh] object-contain"
-                />
+              {proofLoading ? (
+                <div className="flex items-center justify-center p-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : signedProof ? (
+                signedProof.isPdf ? (
+                  <a
+                    href={signedProof.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block p-8 text-center text-primary-600 hover:underline"
+                  >
+                    Buka file PDF
+                  </a>
+                ) : (
+                  <img
+                    src={signedProof.url}
+                    alt="Bukti pembayaran"
+                    className="w-full max-h-[70vh] object-contain"
+                  />
+                )
               ) : (
-                <a
-                  href={paymentProofUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-8 text-center text-primary-600 hover:underline"
-                >
-                  Buka file PDF
-                </a>
+                <p className="p-8 text-center text-sm text-muted-foreground">
+                  Gagal memuat bukti pembayaran.
+                </p>
               )}
             </div>
           </DialogContent>
