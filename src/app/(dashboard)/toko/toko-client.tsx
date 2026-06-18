@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
 import { OnboardingHint } from "@/components/shared/onboarding-hint";
 import { createOrUpdateStore, getStoreSetupData } from "@/actions/store";
@@ -26,7 +32,9 @@ export function TokoClient({
 }) {
   const [isPending, startTransition] = useTransition();
   const [store, setStore] = useState(initialStore);
-  const [slug, setSlug] = useState(initialStore?.slug ?? generateSlug(businessName));
+  const [slug, setSlug] = useState(
+    initialStore?.slug ?? generateSlug(businessName),
+  );
   const [name, setName] = useState(initialStore?.name ?? businessName);
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -65,9 +73,12 @@ export function TokoClient({
         <div className="mb-6 flex items-start gap-3 rounded-xl border-2 border-[#0D0D0D] bg-[#FFD400] p-4 shadow-[3px_3px_0px_#0D0D0D]">
           <PartyPopper className="h-5 w-5 text-[#0D0D0D] flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-[#0D0D0D]">Akun kamu sudah aktif! 🎉</p>
+            <p className="font-bold text-[#0D0D0D]">
+              Akun kamu sudah aktif! 🎉
+            </p>
             <p className="text-sm text-[#0D0D0D]/80 mt-0.5">
-              Yuk lengkapi profil toko kamu dulu — nama toko sudah diisi otomatis dari saat kamu daftar.
+              Yuk lengkapi profil toko kamu dulu — nama toko sudah diisi
+              otomatis dari saat kamu daftar.
             </p>
           </div>
         </div>
@@ -77,7 +88,9 @@ export function TokoClient({
         <Card className="mb-6 bg-primary-50 border-primary-200">
           <CardContent className="py-4 flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-primary-800">URL Toko Publik</p>
+              <p className="text-sm font-medium text-primary-800">
+                URL Toko Publik
+              </p>
               <p className="text-sm text-primary-600 font-mono">{storeUrl}</p>
             </div>
             <div className="flex gap-2">
@@ -104,7 +117,9 @@ export function TokoClient({
       <Card>
         <CardHeader>
           <CardTitle>Profil Toko</CardTitle>
-          <CardDescription>Informasi yang akan ditampilkan ke pelanggan</CardDescription>
+          <CardDescription>
+            Informasi yang akan ditampilkan ke pelanggan
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={handleSubmit} className="space-y-5">
@@ -136,13 +151,17 @@ export function TokoClient({
               </Label>
               <div className="flex rounded-input overflow-hidden border border-input focus-within:ring-2 focus-within:ring-ring">
                 <span className="flex items-center bg-muted px-3 text-sm text-muted-foreground border-r border-input whitespace-nowrap">
-                  pohub.app/
+                  {process.env.NEXT_PUBLIC_APP_URL}/
                 </span>
                 <input
                   id="slug"
                   name="slug"
                   value={slug}
-                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                  onChange={(e) =>
+                    setSlug(
+                      e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                    )
+                  }
                   className="flex-1 h-12 px-3 text-sm bg-white outline-none"
                   placeholder="nama-toko-kamu"
                   required
@@ -189,7 +208,11 @@ export function TokoClient({
               </div>
             </div>
 
-            <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="w-full sm:w-auto"
+            >
               {isPending ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
           </form>

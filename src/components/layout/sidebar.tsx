@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -40,13 +41,16 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex w-60 flex-col fixed left-0 top-0 h-full bg-white border-r-2 border-[#0D0D0D] z-40">
-      <div className="flex items-center gap-3 px-5 py-5 border-b-2 border-[#0D0D0D]">
-        <div className="w-9 h-9 rounded-xl bg-[#FFD400] border-2 border-[#0D0D0D] shadow-sticker-sm flex items-center justify-center flex-shrink-0">
-          <span className="text-[#111111] font-extrabold text-sm">P</span>
-        </div>
+      <div className="flex items-center border-b-2 border-[#0D0D0D]">
+        <Image src="/logo-only.png" alt="POHub" width={100} height={100} />
         <div className="min-w-0">
-          <p className="font-extrabold text-base text-[#111111] leading-tight">POHub</p>
-          <p className="text-[11px] text-[#9A9A9A] font-medium">Pre-Order Hub</p>
+          <p className="font-extrabold text-base text-[#fbd008] leading-tight">
+            PO<label className="text-[#f8335d]">Hub</label>
+          </p>
+
+          <p className="text-[11px] text-[#9A9A9A] font-medium">
+            Pre-Order Hub
+          </p>
         </div>
       </div>
 
@@ -62,13 +66,13 @@ export function Sidebar() {
                 "flex items-center gap-3 px-3 py-2.5 rounded-full text-sm font-semibold transition-all duration-150",
                 isActive
                   ? "bg-[#FFD400] text-[#111111] border-2 border-[#0D0D0D] shadow-sticker-sm"
-                  : "text-[#9A9A9A] hover:bg-[#F7F7F7] hover:text-[#111111]"
+                  : "text-[#9A9A9A] hover:bg-[#F7F7F7] hover:text-[#111111]",
               )}
             >
               <item.icon
                 className={cn(
                   "h-4 w-4 flex-shrink-0",
-                  isActive ? "text-[#111111]" : "text-[#9A9A9A]"
+                  isActive ? "text-[#111111]" : "text-[#9A9A9A]",
                 )}
               />
               {item.label}

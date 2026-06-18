@@ -11,9 +11,13 @@ import type { Store } from "@prisma/client";
 
 async function getCurrentUser() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/masuk");
-  const dbUser = await prisma.user.findUnique({ where: { supabaseId: user.id } });
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: user.id },
+  });
   if (!dbUser) throw new Error("Pengguna tidak ditemukan");
   return dbUser;
 }
@@ -23,14 +27,17 @@ export async function getStore(): Promise<Store | null> {
   return prisma.store.findUnique({ where: { userId: user.id } });
 }
 
-export async function getStoreSetupData(): Promise<{ store: Store | null; businessName: string }> {
+export async function getStoreSetupData(): Promise<{
+  store: Store | null;
+  businessName: string;
+}> {
   const user = await getCurrentUser();
   const store = await prisma.store.findUnique({ where: { userId: user.id } });
   return { store, businessName: user.businessName };
 }
 
 export async function createOrUpdateStore(
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult<Store>> {
   try {
     const user = await getCurrentUser();
@@ -53,13 +60,16 @@ export async function createOrUpdateStore(
       return { success: false, error: "Slug ini tidak bisa digunakan" };
     }
 
-    const existingStore = await prisma.store.findUnique({ where: { userId: user.id } });
+    const existingStore = await prisma.store.findUnique({
+      where: { userId: user.id },
+    });
 
     if (existingStore) {
       const slugTaken = await prisma.store.findFirst({
         where: { slug: parsed.data.slug, id: { not: existingStore.id } },
       });
-      if (slugTaken) return { success: false, error: "Slug sudah digunakan toko lain" };
+      if (slugTaken)
+        return { success: false, error: "Sudah digunakan toko lain" };
 
       const store = await prisma.store.update({
         where: { id: existingStore.id },
@@ -68,8 +78,11 @@ export async function createOrUpdateStore(
       revalidatePath("/toko");
       return { success: true, data: store };
     } else {
-      const slugTaken = await prisma.store.findUnique({ where: { slug: parsed.data.slug } });
-      if (slugTaken) return { success: false, error: "Slug sudah digunakan toko lain" };
+      const slugTaken = await prisma.store.findUnique({
+        where: { slug: parsed.data.slug },
+      });
+      if (slugTaken)
+        return { success: false, error: "Sudah digunakan toko lain" };
 
       const store = await prisma.store.create({
         data: { ...parsed.data, userId: user.id },
@@ -84,7 +97,7 @@ export async function createOrUpdateStore(
 
 export async function checkSlugAvailability(
   slug: string,
-  excludeStoreId?: string
+  excludeStoreId?: string,
 ): Promise<boolean> {
   const store = await prisma.store.findFirst({
     where: { slug, ...(excludeStoreId ? { id: { not: excludeStoreId } } : {}) },
