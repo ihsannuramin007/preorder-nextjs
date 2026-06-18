@@ -20,17 +20,23 @@ export default function ProdukBaruPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [category, setCategory] = useState("OTHER");
+  const [costMode, setCostMode] = useState<"RECIPE" | "MANUAL">("RECIPE");
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     basePrice: "",
+    manualCostPrice: "",
     imageUrl: "",
   });
 
   function handleSubmit() {
     if (!formData.name || !formData.basePrice) {
       toast.error("Nama produk dan harga wajib diisi");
+      return;
+    }
+    if (costMode === "MANUAL" && !formData.manualCostPrice) {
+      toast.error("Harga modal wajib diisi");
       return;
     }
 
@@ -40,13 +46,20 @@ export default function ProdukBaruPage() {
         description: formData.description,
         imageUrl: formData.imageUrl || undefined,
         category,
+        costMode,
+        manualCostPrice:
+          costMode === "MANUAL" ? parseFloat(formData.manualCostPrice) : undefined,
         basePrice: parseFloat(formData.basePrice),
         status: "DRAFT",
       });
 
       if (result.success) {
         toast.success("Produk berhasil dibuat!");
-        router.push(`/produk/${result.data.id}/resep`);
+        if (costMode === "RECIPE") {
+          router.push(`/produk/${result.data.id}/resep`);
+        } else {
+          router.push(`/produk/${result.data.id}`);
+        }
       } else {
         toast.error(result.error);
       }
@@ -157,6 +170,36 @@ export default function ProdukBaruPage() {
                 </Select>
               </div>
 
+              <div className="space-y-1.5">
+                <Label>Cara Hitung Modal</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCostMode("RECIPE")}
+                    className={`rounded-lg border-2 p-3 text-left text-sm transition-all ${
+                      costMode === "RECIPE"
+                        ? "border-[#0D0D0D] bg-[#FFD400] shadow-sticker-sm font-semibold"
+                        : "border-[#E5E7EB] text-[#9A9A9A]"
+                    }`}
+                  >
+                    Resep (Bahan Baku)
+                    <p className="text-[11px] font-normal mt-0.5">Untuk F&amp;B, hitung dari resep</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCostMode("MANUAL")}
+                    className={`rounded-lg border-2 p-3 text-left text-sm transition-all ${
+                      costMode === "MANUAL"
+                        ? "border-[#0D0D0D] bg-[#FFD400] shadow-sticker-sm font-semibold"
+                        : "border-[#E5E7EB] text-[#9A9A9A]"
+                    }`}
+                  >
+                    Harga Modal Manual
+                    <p className="text-[11px] font-normal mt-0.5">Untuk barang non-F&amp;B</p>
+                  </button>
+                </div>
+              </div>
+
               <Button className="w-full" onClick={() => setStep(2)}>
                 Lanjut →
               </Button>
@@ -185,6 +228,24 @@ export default function ProdukBaruPage() {
                   required
                 />
               </div>
+
+              {costMode === "MANUAL" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="manualCostPrice">
+                    Harga Modal (Rp) <span className="text-[#FF3B6B]">*</span>
+                  </Label>
+                  <Input
+                    id="manualCostPrice"
+                    type="number"
+                    min="0"
+                    value={formData.manualCostPrice}
+                    onChange={(e) => setFormData({ ...formData, manualCostPrice: e.target.value })}
+                    placeholder="15000"
+                    required
+                  />
+                  <p className="text-[11px] text-[#9A9A9A]">Biaya modal per item, misalnya harga beli/produksi.</p>
+                </div>
+              )}
 
               {/* Summary */}
               <div className="rounded-lg border-2 border-[#0D0D0D] p-4 bg-[#F7F7F7] space-y-2 shadow-sticker-sm">

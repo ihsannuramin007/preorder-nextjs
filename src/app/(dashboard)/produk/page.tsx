@@ -53,7 +53,9 @@ async function ProductList({ q, page }: { q?: string; page: number }) {
             product.recipeItems.map((ri) => ({
               quantity: Number(ri.quantity),
               ingredient: { averageCost: Number(ri.ingredient.averageCost) },
-            }))
+            })),
+            [],
+            product.costMode === "MANUAL" ? Number(product.manualCostPrice ?? 0) : undefined
           );
           const capacity = calculateCapacity(
             product.recipeItems.map((ri) => ({

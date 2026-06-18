@@ -23,6 +23,7 @@ async function getStore() {
 function serializeProduct<
   T extends {
     basePrice: unknown;
+    manualCostPrice?: unknown;
     recipeItems: Array<{
       quantity: unknown;
       ingredient: {
@@ -38,6 +39,7 @@ function serializeProduct<
   return {
     ...p,
     basePrice: Number(p.basePrice),
+    manualCostPrice: p.manualCostPrice != null ? Number(p.manualCostPrice) : null,
     recipeItems: p.recipeItems.map((ri) => ({
       ...ri,
       quantity: Number(ri.quantity),
@@ -115,6 +117,8 @@ export async function createProduct(data: {
   description?: string;
   imageUrl?: string;
   category: string;
+  costMode?: string;
+  manualCostPrice?: number;
   basePrice: number;
   status: string;
 }): Promise<ActionResult<{ id: string }>> {
@@ -127,6 +131,8 @@ export async function createProduct(data: {
         description: data.description,
         imageUrl: data.imageUrl,
         category: data.category as any,
+        costMode: (data.costMode ?? "RECIPE") as any,
+        manualCostPrice: data.manualCostPrice,
         basePrice: data.basePrice,
         status: data.status as any,
       },
@@ -145,6 +151,8 @@ export async function updateProduct(
     description: string;
     imageUrl: string;
     category: string;
+    costMode: string;
+    manualCostPrice: number | null;
     basePrice: number;
     status: string;
   }>
@@ -190,7 +198,8 @@ export async function getProductHpp(productId: string): Promise<number> {
       quantity: Number(ri.quantity),
       ingredient: { averageCost: Number(ri.ingredient.averageCost) },
     })),
-    product.additionalCosts.map((c) => ({ amount: Number(c.amount) }))
+    product.additionalCosts.map((c) => ({ amount: Number(c.amount) })),
+    product.costMode === "MANUAL" ? Number(product.manualCostPrice ?? 0) : undefined
   );
 }
 

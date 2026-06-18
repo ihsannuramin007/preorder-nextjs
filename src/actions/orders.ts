@@ -134,7 +134,8 @@ export async function createPublicOrder(data: {
             quantity: Number(ri.quantity),
             ingredient: { averageCost: Number(ri.ingredient.averageCost) },
           })),
-          product.additionalCosts.map((c) => ({ amount: Number(c.amount) }))
+          product.additionalCosts.map((c) => ({ amount: Number(c.amount) })),
+          product.costMode === "MANUAL" ? Number(product.manualCostPrice ?? 0) : undefined
         );
         const subtotal = unitPrice * item.quantity;
 

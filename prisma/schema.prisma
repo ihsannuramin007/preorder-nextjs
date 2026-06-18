@@ -56,7 +56,18 @@ enum ProductCategory {
   DESSERT
   FROZEN_FOOD
   SNACK
+  FASHION
+  CRAFT
+  ACCESSORY
+  ELECTRONIC
+  HOUSEHOLD
+  BEAUTY
   OTHER
+}
+
+enum ProductCostMode {
+  RECIPE
+  MANUAL
 }
 
 enum IngredientCategory {
@@ -129,6 +140,8 @@ model Product {
   description  String?
   imageUrl     String?
   category     ProductCategory @default(OTHER)
+  costMode     ProductCostMode @default(RECIPE)
+  manualCostPrice Decimal?     @db.Decimal(12, 2)
   basePrice    Decimal         @db.Decimal(12, 2)
   status       ProductStatus   @default(DRAFT)
   displayOrder Int             @default(0)

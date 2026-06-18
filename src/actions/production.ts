@@ -212,7 +212,8 @@ export async function startProduction(
           quantity: Number(ri.quantity),
           ingredient: { averageCost: Number(ri.ingredient.averageCost) },
         })),
-        p.additionalCosts.map((c) => ({ amount: Number(c.amount) }))
+        p.additionalCosts.map((c) => ({ amount: Number(c.amount) })),
+        p.costMode === "MANUAL" ? Number(p.manualCostPrice ?? 0) : undefined
       );
       return prisma.productionRecord.create({
         data: {

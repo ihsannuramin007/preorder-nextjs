@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { AdditionalCostSection } from "@/components/products/additional-cost-section";
 import { ProfitSimulator } from "@/components/products/profit-simulator";
@@ -14,6 +18,7 @@ import { calculateIngredientsCost, calculateAdditionalCostsTotal } from "@/lib/u
 import { CATEGORY_LABELS } from "@/lib/constants/categories";
 import { UNIT_LABELS } from "@/lib/constants/units";
 import { toDisplayUnit } from "@/lib/utils/units";
+import { updateProduct } from "@/actions/products";
 import type { getProduct, getProductionRecords } from "@/actions/products";
 import type { getAdditionalCosts } from "@/actions/additional-costs";
 import { FlaskConical, ImageIcon, Factory, History } from "lucide-react";
@@ -43,6 +48,29 @@ export function ProductDetailTabs({
   const [additionalCosts, setAdditionalCosts] = useState<AdditionalCostItem[]>(
     product.additionalCosts
   );
+  const isManual = product.costMode === "MANUAL";
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [manualCostInput, setManualCostInput] = useState(
+    product.manualCostPrice != null ? String(product.manualCostPrice) : ""
+  );
+
+  function handleSaveManualCost() {
+    const value = parseFloat(manualCostInput);
+    if (Number.isNaN(value) || value < 0) {
+      toast.error("Harga modal tidak valid");
+      return;
+    }
+    startTransition(async () => {
+      const result = await updateProduct(product.id, { manualCostPrice: value });
+      if (result.success) {
+        toast.success("Harga modal diperbarui");
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
 
   const ingredientsCost = calculateIngredientsCost(
     product.recipeItems.map((ri) => ({
@@ -51,16 +79,16 @@ export function ProductDetailTabs({
     }))
   );
   const additionalCostTotal = calculateAdditionalCostsTotal(additionalCosts);
-  const hpp = ingredientsCost + additionalCostTotal;
+  const hpp = (isManual ? Number(product.manualCostPrice ?? 0) : ingredientsCost) + additionalCostTotal;
   const cfg = statusConfig[product.status];
 
   return (
     <Tabs defaultValue="overview">
       <TabsList>
         <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="recipe">Resep</TabsTrigger>
+        {!isManual && <TabsTrigger value="recipe">Resep</TabsTrigger>}
         <TabsTrigger value="costing">HPP</TabsTrigger>
-        <TabsTrigger value="production">Produksi</TabsTrigger>
+        {!isManual && <TabsTrigger value="production">Produksi</TabsTrigger>}
       </TabsList>
 
       <TabsContent value="overview" className="space-y-4">
@@ -125,6 +153,7 @@ export function ProductDetailTabs({
         </Card>
       </TabsContent>
 
+      {!isManual && (
       <TabsContent value="recipe" className="space-y-4">
         <Card>
           <CardHeader>
@@ -164,6 +193,7 @@ export function ProductDetailTabs({
           </CardContent>
         </Card>
       </TabsContent>
+      )}
 
       <TabsContent value="costing" className="space-y-4">
         <Card>
@@ -171,10 +201,28 @@ export function ProductDetailTabs({
             <CardTitle className="text-base">Total HPP</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Biaya Bahan</span>
-              <CurrencyDisplay amount={ingredientsCost} size="sm" />
-            </div>
+            {isManual ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="manualCostPrice">Harga Modal (Rp)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="manualCostPrice"
+                    type="number"
+                    min="0"
+                    value={manualCostInput}
+                    onChange={(e) => setManualCostInput(e.target.value)}
+                  />
+                  <Button onClick={handleSaveManualCost} disabled={isPending} size="sm">
+                    {isPending ? "Menyimpan..." : "Simpan"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Biaya Bahan</span>
+                <CurrencyDisplay amount={ingredientsCost} size="sm" />
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Biaya Tambahan</span>
               <CurrencyDisplay amount={additionalCostTotal} size="sm" />
@@ -209,6 +257,7 @@ export function ProductDetailTabs({
         </Card>
       </TabsContent>
 
+      {!isManual && (
       <TabsContent value="production" className="space-y-4">
         <Card>
           <CardHeader>
@@ -260,6 +309,7 @@ export function ProductDetailTabs({
           </CardContent>
         </Card>
       </TabsContent>
+      )}
     </Tabs>
   );
 }

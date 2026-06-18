@@ -23,9 +23,12 @@ export function calculateAdditionalCostsTotal(additionalCosts: AdditionalCostInp
 
 export function calculateHpp(
   recipeItems: RecipeItemInput[],
-  additionalCosts: AdditionalCostInput[] = []
+  additionalCosts: AdditionalCostInput[] = [],
+  manualCostPrice?: number | null
 ): number {
-  return calculateIngredientsCost(recipeItems) + calculateAdditionalCostsTotal(additionalCosts);
+  const base =
+    manualCostPrice != null ? manualCostPrice : calculateIngredientsCost(recipeItems);
+  return base + calculateAdditionalCostsTotal(additionalCosts);
 }
 
 export function calculatePriceFromMargin(hpp: number, marginPercent: number): number {
