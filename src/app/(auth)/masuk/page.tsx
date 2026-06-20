@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { login, loginWithGoogle } from "@/actions/auth";
+import { GoogleIcon } from "@/components/ui/google-icon";
 
 export default function MasukPage() {
   const router = useRouter();
@@ -49,6 +50,7 @@ export default function MasukPage() {
           disabled={googlePending}
           type="button"
         >
+          <GoogleIcon />
           {googlePending ? "Mengalihkan..." : "Masuk dengan Google"}
         </Button>
 
