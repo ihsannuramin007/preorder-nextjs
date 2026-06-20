@@ -6,8 +6,18 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
+import { GroupPaymentProofUpload } from "@/components/shared/group-payment-proof-upload";
 import { closeGroupOrder } from "@/actions/group-orders";
-import { Users, Copy, Lock, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, Copy, Lock, ChevronDown, ChevronUp, CheckCircle2, Circle } from "lucide-react";
+
+type GroupStatus = "COLLECTING" | "CLOSED" | "PAYMENT_REVIEW" | "PAID" | "CANCELLED";
+
+const STEPS: { status: GroupStatus; label: string }[] = [
+  { status: "COLLECTING", label: "Mengumpulkan Pesanan" },
+  { status: "CLOSED", label: "Menunggu Pembayaran" },
+  { status: "PAYMENT_REVIEW", label: "Menunggu Verifikasi" },
+  { status: "PAID", label: "Pembayaran Diterima" },
+];
 
 type GroupData = {
   id: string;
@@ -16,8 +26,10 @@ type GroupData = {
   facilitatorPhone: string;
   facilitatorAddress: string;
   facilitatorNotes: string | null;
-  status: "COLLECTING" | "CLOSED" | "CANCELLED";
+  status: GroupStatus;
   totalAmount: number;
+  paymentProofUrl: string | null;
+  rejectionReason: string | null;
   campaign: { id: string; name: string };
 };
 
@@ -42,6 +54,7 @@ export function RingkasanClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [expandedMember, setExpandedMember] = useState<string | null>(null);
+  const currentStepIndex = STEPS.findIndex((s) => s.status === group.status);
 
   function copyLink() {
     navigator.clipboard.writeText(memberLink);
@@ -71,16 +84,37 @@ export function RingkasanClient({
           </div>
         </div>
 
-        {group.status === "COLLECTING" ? (
-          <div className="rounded-card border border-primary-200 bg-primary-50 p-3 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
-            <span className="text-sm text-primary-800 font-medium">Sesi terbuka — anggota masih bisa bergabung</span>
-          </div>
+        {group.status === "CANCELLED" ? (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-4 text-center text-red-700 font-medium">
+              Sesi group order ini telah dibatalkan.
+            </CardContent>
+          </Card>
         ) : (
-          <div className="rounded-card border border-green-200 bg-green-50 p-3 flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <span className="text-sm text-green-800 font-medium">Sesi ditutup</span>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Status Pesanan</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {STEPS.map((step, i) => {
+                  const done = i <= currentStepIndex;
+                  return (
+                    <div key={step.status} className="flex items-center gap-3">
+                      {done ? (
+                        <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      )}
+                      <span className={done ? "font-medium text-foreground" : "text-muted-foreground"}>
+                        {step.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         <Card>
@@ -102,6 +136,20 @@ export function RingkasanClient({
           </div>
           <CurrencyDisplay amount={group.totalAmount} size="lg" className="text-primary-700 font-bold" />
         </div>
+
+        {group.status === "CLOSED" && (
+          <Card>
+            <CardHeader><CardTitle className="text-base">Bayar Tagihan</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              {group.rejectionReason && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  Bukti sebelumnya ditolak: {group.rejectionReason}
+                </div>
+              )}
+              <GroupPaymentProofUpload sessionCode={sessionCode} onUploaded={() => router.refresh()} />
+            </CardContent>
+          </Card>
+        )}
 
         {group.status === "COLLECTING" && (
           <Card>

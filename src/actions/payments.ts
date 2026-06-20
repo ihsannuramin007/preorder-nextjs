@@ -77,6 +77,75 @@ export async function getPaymentProofUrl(
   }
 }
 
+export async function approveGroupPayment(groupOrderId: string): Promise<ActionResult> {
+  try {
+    const store = await getStore();
+    await prisma.groupOrder.update({
+      where: { id: groupOrderId, campaign: { storeId: store.id } },
+      data: { status: "PAID", verifiedAt: new Date() },
+    });
+    revalidatePath("/pesanan/grup");
+    revalidatePath(`/pesanan/grup/${groupOrderId}`);
+    return { success: true, data: undefined };
+  } catch {
+    return { success: false, error: "Terjadi kesalahan" };
+  }
+}
+
+export async function getGroupPaymentProofUrl(
+  groupOrderId: string
+): Promise<ActionResult<{ url: string; isPdf: boolean }>> {
+  try {
+    const store = await getStore();
+    const groupOrder = await prisma.groupOrder.findFirst({
+      where: { id: groupOrderId, campaign: { storeId: store.id } },
+      select: { paymentProofUrl: true },
+    });
+    if (!groupOrder?.paymentProofUrl) {
+      return { success: false, error: "Bukti pembayaran tidak ditemukan" };
+    }
+
+    const path = extractStoragePath(groupOrder.paymentProofUrl);
+    const admin = createAdminClient();
+    const { data, error } = await admin.storage
+      .from(PAYMENT_PROOF_BUCKET)
+      .createSignedUrl(path, 300);
+
+    if (error || !data) {
+      return { success: false, error: "Gagal memuat bukti pembayaran" };
+    }
+
+    return {
+      success: true,
+      data: { url: data.signedUrl, isPdf: /\.pdf$/i.test(path) },
+    };
+  } catch {
+    return { success: false, error: "Terjadi kesalahan" };
+  }
+}
+
+export async function rejectGroupPayment(
+  groupOrderId: string,
+  reason: string
+): Promise<ActionResult> {
+  try {
+    const store = await getStore();
+    await prisma.groupOrder.update({
+      where: { id: groupOrderId, campaign: { storeId: store.id } },
+      data: {
+        status: "CLOSED",
+        rejectionReason: reason,
+        paymentProofUrl: null,
+      },
+    });
+    revalidatePath("/pesanan/grup");
+    revalidatePath(`/pesanan/grup/${groupOrderId}`);
+    return { success: true, data: undefined };
+  } catch {
+    return { success: false, error: "Terjadi kesalahan" };
+  }
+}
+
 export async function rejectPayment(
   orderId: string,
   reason: string

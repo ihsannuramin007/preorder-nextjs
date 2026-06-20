@@ -201,6 +201,29 @@ export async function getPublicGroupOrder(sessionCode: string) {
   return g ? serializeGroupOrder(g) : null;
 }
 
+export async function uploadGroupPaymentProof(
+  sessionCode: string,
+  path: string
+): Promise<ActionResult<void>> {
+  try {
+    const groupOrder = await prisma.groupOrder.findUnique({ where: { sessionCode } });
+    if (!groupOrder) return { success: false, error: "Sesi tidak ditemukan" };
+    if (groupOrder.status !== "CLOSED") {
+      return { success: false, error: "Sesi belum ditutup atau sudah diverifikasi" };
+    }
+
+    await prisma.groupOrder.update({
+      where: { sessionCode },
+      data: { paymentProofUrl: path, status: "PAYMENT_REVIEW", rejectionReason: null },
+    });
+
+    return { success: true, data: undefined };
+  } catch (e) {
+    console.error("uploadGroupPaymentProof:", e);
+    return { success: false, error: "Gagal mengunggah bukti pembayaran" };
+  }
+}
+
 export async function closeGroupOrder(sessionCode: string): Promise<ActionResult<void>> {
   try {
     const groupOrder = await prisma.groupOrder.findUnique({ where: { sessionCode } });
@@ -304,7 +327,7 @@ export async function getDashboardGroupOrder(id: string) {
 
 export async function updateGroupOrderStatus(
   id: string,
-  status: "COLLECTING" | "CLOSED" | "CANCELLED"
+  status: "COLLECTING" | "CLOSED" | "PAYMENT_REVIEW" | "PAID" | "CANCELLED"
 ): Promise<ActionResult<void>> {
   try {
     const store = await getStore();

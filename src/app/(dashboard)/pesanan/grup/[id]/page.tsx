@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { GroupOrderStatusActions } from "./group-order-status-actions";
+import { GroupPaymentVerification } from "./group-payment-verification";
 import { Users, Phone, MapPin, FileText, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/date";
@@ -13,6 +14,8 @@ import { formatDate } from "@/lib/utils/date";
 const STATUS_CONFIG = {
   COLLECTING: { label: "Mengumpulkan", variant: "warning" as const },
   CLOSED: { label: "Ditutup", variant: "secondary" as const },
+  PAYMENT_REVIEW: { label: "Verifikasi Pembayaran", variant: "warning" as const },
+  PAID: { label: "Lunas", variant: "success" as const },
   CANCELLED: { label: "Dibatalkan", variant: "destructive" as const },
 };
 
@@ -69,6 +72,13 @@ export default async function GroupOrderDetailPage({
 
       <div className="grid md:grid-cols-3 gap-4">
         <div className="md:col-span-2 space-y-4">
+          {groupOrder.status === "PAYMENT_REVIEW" && (
+            <GroupPaymentVerification
+              groupOrderId={groupOrder.id}
+              paymentProofUrl={groupOrder.paymentProofUrl}
+            />
+          )}
+
           {/* Member orders */}
           <Card>
             <CardHeader>

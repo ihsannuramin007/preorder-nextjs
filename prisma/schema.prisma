@@ -38,6 +38,8 @@ enum OrderStatus {
 enum GroupOrderStatus {
   COLLECTING
   CLOSED
+  PAYMENT_REVIEW
+  PAID
   CANCELLED
 }
 
@@ -360,6 +362,10 @@ model GroupOrder {
   facilitatorNotes   String?
   status             GroupOrderStatus @default(COLLECTING)
   totalAmount        Decimal          @default(0) @db.Decimal(12, 2)
+  paymentProofUrl    String?
+  paymentNote        String?
+  rejectionReason    String?
+  verifiedAt         DateTime?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 

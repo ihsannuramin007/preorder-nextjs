@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { updateGroupOrderStatus } from "@/actions/group-orders";
 
-type Status = "COLLECTING" | "CLOSED" | "CANCELLED";
+type Status = "COLLECTING" | "CLOSED" | "PAYMENT_REVIEW" | "PAID" | "CANCELLED";
 
 export function GroupOrderStatusActions({
   groupOrderId,
@@ -54,6 +54,20 @@ export function GroupOrderStatusActions({
         onClick={() => handleUpdate("COLLECTING")}
       >
         Buka Kembali
+      </Button>
+    );
+  }
+
+  if (status === "PAYMENT_REVIEW" || status === "PAID") {
+    return (
+      <Button
+        size="sm"
+        variant="ghost"
+        className="w-full text-destructive"
+        disabled={isPending}
+        onClick={() => handleUpdate("CANCELLED")}
+      >
+        Batalkan
       </Button>
     );
   }

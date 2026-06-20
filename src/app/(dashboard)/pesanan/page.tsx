@@ -29,6 +29,8 @@ const orderStatusConfig: Record<OrderStatus, { label: string; variant: any }> = 
 const groupStatusConfig = {
   COLLECTING: { label: "Mengumpulkan", variant: "warning" as const },
   CLOSED: { label: "Ditutup", variant: "secondary" as const },
+  PAYMENT_REVIEW: { label: "Verifikasi Pembayaran", variant: "warning" as const },
+  PAID: { label: "Lunas", variant: "success" as const },
   CANCELLED: { label: "Dibatalkan", variant: "destructive" as const },
 };
 

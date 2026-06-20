@@ -15,7 +15,7 @@ type GroupData = {
   id: string;
   sessionCode: string;
   facilitatorName: string;
-  status: "COLLECTING" | "CLOSED" | "CANCELLED";
+  status: "COLLECTING" | "CLOSED" | "PAYMENT_REVIEW" | "PAID" | "CANCELLED";
   memberCount: number;
   campaign: {
     id: string;

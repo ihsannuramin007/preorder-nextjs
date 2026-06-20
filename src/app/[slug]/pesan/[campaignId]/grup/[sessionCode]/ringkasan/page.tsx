@@ -32,6 +32,8 @@ export default async function RingkasanPage({
     facilitatorNotes: groupOrder.facilitatorNotes,
     status: groupOrder.status,
     totalAmount: Number(groupOrder.totalAmount),
+    paymentProofUrl: groupOrder.paymentProofUrl,
+    rejectionReason: groupOrder.rejectionReason,
     campaign: { id: groupOrder.campaign!.id, name: groupOrder.campaign!.name },
   };
 
