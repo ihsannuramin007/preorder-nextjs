@@ -63,7 +63,15 @@ function PesananTabs({ active }: { active: string }) {
 
 // ── Individual orders list ─────────────────────────────────────────────────
 async function OrderList({ q, page }: { q?: string; page: number }) {
-  const { data: orders, total } = await getOrders({ search: q, page, pageSize: PAGE_SIZE });
+  let orders, total;
+  try {
+    ({ data: orders, total } = await getOrders({ search: q, page, pageSize: PAGE_SIZE }));
+  } catch (e) {
+    if (e instanceof Error && e.message === "Toko belum dibuat") {
+      return <p className="text-muted-foreground">Buat toko terlebih dahulu.</p>;
+    }
+    throw e;
+  }
 
   if (orders.length === 0) {
     return q ? (
@@ -119,7 +127,15 @@ async function OrderList({ q, page }: { q?: string; page: number }) {
 
 // ── Group orders list ──────────────────────────────────────────────────────
 async function GroupOrderList({ q, page }: { q?: string; page: number }) {
-  const { data: groupOrders, total } = await getDashboardGroupOrders({ search: q, page, pageSize: PAGE_SIZE });
+  let groupOrders, total;
+  try {
+    ({ data: groupOrders, total } = await getDashboardGroupOrders({ search: q, page, pageSize: PAGE_SIZE }));
+  } catch (e) {
+    if (e instanceof Error && e.message === "Toko belum dibuat") {
+      return <p className="text-muted-foreground">Buat toko terlebih dahulu.</p>;
+    }
+    throw e;
+  }
 
   if (groupOrders.length === 0) {
     return q ? (

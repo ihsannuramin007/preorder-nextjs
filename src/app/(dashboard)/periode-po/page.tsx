@@ -23,7 +23,15 @@ const statusConfig: Record<CampaignStatus, { label: string; variant: any }> = {
 };
 
 async function CampaignList({ q, page }: { q?: string; page: number }) {
-  const { data: campaigns, total } = await getCampaigns({ search: q, page, pageSize: PAGE_SIZE });
+  let campaigns, total;
+  try {
+    ({ data: campaigns, total } = await getCampaigns({ search: q, page, pageSize: PAGE_SIZE }));
+  } catch (e) {
+    if (e instanceof Error && e.message === "Toko belum dibuat") {
+      return <p className="text-muted-foreground">Buat toko terlebih dahulu.</p>;
+    }
+    throw e;
+  }
 
   if (campaigns.length === 0) {
     return q ? (

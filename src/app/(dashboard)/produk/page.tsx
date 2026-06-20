@@ -24,7 +24,15 @@ const statusConfig: Record<ProductStatus, { label: string; variant: any }> = {
 };
 
 async function ProductList({ q, page }: { q?: string; page: number }) {
-  const { data: products, total } = await getProductsList({ search: q, page, pageSize: PAGE_SIZE });
+  let products, total;
+  try {
+    ({ data: products, total } = await getProductsList({ search: q, page, pageSize: PAGE_SIZE }));
+  } catch (e) {
+    if (e instanceof Error && e.message === "Toko belum dibuat") {
+      return <p className="text-muted-foreground">Buat toko terlebih dahulu.</p>;
+    }
+    throw e;
+  }
 
   if (products.length === 0) {
     return q ? (

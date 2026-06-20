@@ -15,7 +15,15 @@ import { Plus, FlaskConical, Search } from "lucide-react";
 const PAGE_SIZE = 10;
 
 async function IngredientList({ q, page }: { q?: string; page: number }) {
-  const { data: ingredients, total } = await getIngredientsList({ search: q, page, pageSize: PAGE_SIZE });
+  let ingredients, total;
+  try {
+    ({ data: ingredients, total } = await getIngredientsList({ search: q, page, pageSize: PAGE_SIZE }));
+  } catch (e) {
+    if (e instanceof Error && e.message === "Toko belum dibuat") {
+      return <p className="text-muted-foreground">Buat toko terlebih dahulu.</p>;
+    }
+    throw e;
+  }
 
   if (ingredients.length === 0) {
     return q ? (
