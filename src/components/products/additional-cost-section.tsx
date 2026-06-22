@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
+import { CurrencyInput } from "@/components/shared/currency-input";
 import {
   addAdditionalCost,
   removeAdditionalCost,
@@ -122,13 +123,11 @@ export function AdditionalCostSection({
           onChange={(e) => setLabel(e.target.value)}
           className="flex-1"
         />
-        <Input
-          type="number"
-          min="0"
+        <CurrencyInput
           placeholder="Jumlah"
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-28"
+          onChange={(value) => setAmount(String(value))}
+          className="w-20"
         />
         <Button onClick={handleAdd} disabled={isPending}>
           <Plus className="h-4 w-4" />

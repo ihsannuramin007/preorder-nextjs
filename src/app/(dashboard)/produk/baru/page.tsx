@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/layout/page-header";
-import { ImageUpload } from "@/components/shared/image-upload";
+import { MultiImageUpload } from "@/components/shared/multi-image-upload";
+import { CurrencyInput } from "@/components/shared/currency-input";
 import { createProduct } from "@/actions/products";
 import { CATEGORY_OPTIONS } from "@/lib/constants/categories";
 import { ArrowLeft } from "lucide-react";
@@ -27,8 +28,8 @@ export default function ProdukBaruPage() {
     description: "",
     basePrice: "",
     manualCostPrice: "",
-    imageUrl: "",
   });
+  const [images, setImages] = useState<string[]>([]);
 
   function handleSubmit() {
     if (!formData.name || !formData.basePrice) {
@@ -44,7 +45,7 @@ export default function ProdukBaruPage() {
       const result = await createProduct({
         name: formData.name,
         description: formData.description,
-        imageUrl: formData.imageUrl || undefined,
+        images,
         category,
         costMode,
         manualCostPrice:
@@ -121,15 +122,7 @@ export default function ProdukBaruPage() {
               {/* Image upload */}
               <div className="space-y-1.5">
                 <Label>Foto Produk</Label>
-                <div className="max-w-[180px]">
-                  <ImageUpload
-                    value={formData.imageUrl}
-                    onChange={(url) => setFormData({ ...formData, imageUrl: url })}
-                  />
-                </div>
-                <p className="text-[11px] text-[#9A9A9A]">
-                  Opsional. Foto akan ditampilkan di halaman toko.
-                </p>
+                <MultiImageUpload value={images} onChange={setImages} />
               </div>
 
               <div className="space-y-1.5">
@@ -220,15 +213,13 @@ export default function ProdukBaruPage() {
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="basePrice">
-                  Harga Jual (Rp) <span className="text-[#FF3B6B]">*</span>
+                  Harga Jual <span className="text-[#FF3B6B]">*</span>
                 </Label>
-                <Input
+                <CurrencyInput
                   id="basePrice"
-                  type="number"
-                  min="0"
                   value={formData.basePrice}
-                  onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
-                  placeholder="25000"
+                  onChange={(value) => setFormData({ ...formData, basePrice: String(value) })}
+                  placeholder="25.000"
                   required
                 />
               </div>
@@ -236,15 +227,15 @@ export default function ProdukBaruPage() {
               {costMode === "MANUAL" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="manualCostPrice">
-                    Harga Modal (Rp) <span className="text-[#FF3B6B]">*</span>
+                    Harga Modal <span className="text-[#FF3B6B]">*</span>
                   </Label>
-                  <Input
+                  <CurrencyInput
                     id="manualCostPrice"
-                    type="number"
-                    min="0"
                     value={formData.manualCostPrice}
-                    onChange={(e) => setFormData({ ...formData, manualCostPrice: e.target.value })}
-                    placeholder="15000"
+                    onChange={(value) =>
+                      setFormData({ ...formData, manualCostPrice: String(value) })
+                    }
+                    placeholder="15.000"
                     required
                   />
                   <p className="text-[11px] text-[#9A9A9A]">Biaya modal per item, misalnya harga beli/produksi.</p>
@@ -254,10 +245,10 @@ export default function ProdukBaruPage() {
               {/* Summary */}
               <div className="rounded-lg border-2 border-[#0D0D0D] p-4 bg-[#F7F7F7] space-y-2 shadow-sticker-sm">
                 <p className="text-sm font-bold text-[#111111]">Ringkasan Produk</p>
-                {formData.imageUrl && (
+                {images[0] && (
                   <div className="w-12 h-12 rounded-lg border-2 border-[#0D0D0D] overflow-hidden">
                     <img
-                      src={formData.imageUrl}
+                      src={images[0]}
                       alt="preview"
                       className="w-full h-full object-cover"
                     />

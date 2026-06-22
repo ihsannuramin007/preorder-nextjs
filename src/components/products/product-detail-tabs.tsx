@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
+import { CurrencyInput } from "@/components/shared/currency-input";
 import { AdditionalCostSection } from "@/components/products/additional-cost-section";
 import { ProfitSimulator } from "@/components/products/profit-simulator";
 import { calculateIngredientsCost, calculateAdditionalCostsTotal } from "@/lib/utils/hpp";
@@ -54,6 +55,13 @@ export function ProductDetailTabs({
   const [manualCostInput, setManualCostInput] = useState(
     product.manualCostPrice != null ? String(product.manualCostPrice) : ""
   );
+  const galleryImages =
+    product.images && product.images.length > 0
+      ? product.images
+      : product.imageUrl
+        ? [product.imageUrl]
+        : [];
+  const [activeImage, setActiveImage] = useState(0);
 
   function handleSaveManualCost() {
     const value = parseFloat(manualCostInput);
@@ -105,16 +113,34 @@ export function ProductDetailTabs({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {product.imageUrl && (
-              <div className="relative w-full aspect-video rounded-lg border-2 border-[#0D0D0D] overflow-hidden shadow-sticker bg-[#F7F7F7]">
-                <Image
-                  src={product.imageUrl}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 600px"
-                  priority
-                />
+            {galleryImages.length > 0 && (
+              <div className="space-y-2">
+                <div className="relative w-full aspect-video rounded-lg border-2 border-[#0D0D0D] overflow-hidden shadow-sticker bg-[#F7F7F7]">
+                  <Image
+                    src={galleryImages[activeImage] ?? galleryImages[0]}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    priority
+                  />
+                </div>
+                {galleryImages.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto">
+                    {galleryImages.map((img, i) => (
+                      <button
+                        key={img + i}
+                        type="button"
+                        onClick={() => setActiveImage(i)}
+                        className={`relative flex-shrink-0 w-14 h-14 rounded-lg border-2 overflow-hidden transition-all ${
+                          i === activeImage ? "border-[#0D0D0D] shadow-sticker-sm" : "border-[#E5E7EB]"
+                        }`}
+                      >
+                        <Image src={img} alt="" fill className="object-cover" sizes="56px" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             {product.description && (
@@ -139,7 +165,11 @@ export function ProductDetailTabs({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ProductImageUpload productId={product.id} initialUrl={product.imageUrl} />
+            <ProductImageUpload
+              productId={product.id}
+              initialImages={product.images}
+              initialUrl={product.imageUrl}
+            />
           </CardContent>
         </Card>
 
@@ -203,14 +233,12 @@ export function ProductDetailTabs({
           <CardContent className="space-y-2">
             {isManual ? (
               <div className="space-y-1.5">
-                <Label htmlFor="manualCostPrice">Harga Modal (Rp)</Label>
+                <Label htmlFor="manualCostPrice">Harga Modal</Label>
                 <div className="flex gap-2">
-                  <Input
+                  <CurrencyInput
                     id="manualCostPrice"
-                    type="number"
-                    min="0"
                     value={manualCostInput}
-                    onChange={(e) => setManualCostInput(e.target.value)}
+                    onChange={(value) => setManualCostInput(String(value))}
                   />
                   <Button onClick={handleSaveManualCost} disabled={isPending} size="sm">
                     {isPending ? "Menyimpan..." : "Simpan"}

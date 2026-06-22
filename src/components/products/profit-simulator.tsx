@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
+import { CurrencyInput } from "@/components/shared/currency-input";
 import {
   calculatePriceFromMargin,
   calculatePriceFromMarkup,
@@ -71,13 +72,11 @@ export function ProfitSimulator({ hpp, product }: { hpp: number; product: Produc
 
       {mode === "manual" && (
         <div className="space-y-1.5">
-          <Label htmlFor="manualPrice">Harga Jual (Rp)</Label>
-          <Input
+          <Label htmlFor="manualPrice">Harga Jual</Label>
+          <CurrencyInput
             id="manualPrice"
-            type="number"
-            min="0"
             value={manualPrice}
-            onChange={(e) => setManualPrice(e.target.value)}
+            onChange={(value) => setManualPrice(String(value))}
           />
         </div>
       )}

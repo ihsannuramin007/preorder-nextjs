@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
+import { CurrencyInput } from "@/components/shared/currency-input";
 import { getIngredients, createIngredient } from "@/actions/ingredients";
 import { addRecipeItem } from "@/actions/recipes";
 import { UNIT_LABELS, UNIT_OPTIONS } from "@/lib/constants/units";
@@ -298,13 +299,11 @@ export function AddIngredientDialog({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="newCost">Biaya Pembelian (Rp)</Label>
-                <Input
+                <Label htmlFor="newCost">Biaya Pembelian</Label>
+                <CurrencyInput
                   id="newCost"
-                  type="number"
-                  min="0"
                   value={newCost}
-                  onChange={(e) => setNewCost(e.target.value)}
+                  onChange={(value) => setNewCost(String(value))}
                 />
                 {costPerUnitPreview > 0 && (
                   <p className="text-xs text-muted-foreground">

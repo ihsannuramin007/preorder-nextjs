@@ -116,6 +116,7 @@ export async function createProduct(data: {
   name: string;
   description?: string;
   imageUrl?: string;
+  images?: string[];
   category: string;
   costMode?: string;
   manualCostPrice?: number;
@@ -129,7 +130,8 @@ export async function createProduct(data: {
         storeId: store.id,
         name: data.name,
         description: data.description,
-        imageUrl: data.imageUrl,
+        imageUrl: data.images?.[0] ?? data.imageUrl,
+        images: data.images ?? [],
         category: data.category as any,
         costMode: (data.costMode ?? "RECIPE") as any,
         manualCostPrice: data.manualCostPrice,
@@ -150,6 +152,7 @@ export async function updateProduct(
     name: string;
     description: string;
     imageUrl: string;
+    images: string[];
     category: string;
     costMode: string;
     manualCostPrice: number | null;
@@ -159,9 +162,13 @@ export async function updateProduct(
 ): Promise<ActionResult> {
   try {
     const store = await getStore();
+    const { images, ...rest } = data;
     await prisma.product.update({
       where: { id, storeId: store.id },
-      data: data as any,
+      data: {
+        ...rest,
+        ...(images ? { images, imageUrl: images[0] } : {}),
+      } as any,
     });
     revalidatePath("/produk");
     revalidatePath(`/produk/${id}`);

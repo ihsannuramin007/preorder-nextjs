@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/layout/page-header";
+import { CurrencyInput } from "@/components/shared/currency-input";
 import { createIngredientsBatch, type IngredientBatchRow } from "@/actions/ingredients";
 import { UNIT_OPTIONS } from "@/lib/constants/units";
 import { INGREDIENT_CATEGORY_OPTIONS } from "@/lib/constants/ingredient-categories";
@@ -211,14 +212,12 @@ export default function BahanBakuBaruPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor={`initialCost-${index}`}>Biaya Pembelian (Rp)</Label>
-                      <Input
+                      <Label htmlFor={`initialCost-${index}`}>Biaya Pembelian</Label>
+                      <CurrencyInput
                         id={`initialCost-${index}`}
-                        type="number"
-                        min="0"
                         value={row.initialCost}
-                        onChange={(e) => updateRow(index, "initialCost", e.target.value)}
-                        placeholder="180000"
+                        onChange={(value) => updateRow(index, "initialCost", String(value))}
+                        placeholder="180.000"
                       />
                     </div>
                     <p className="text-xs text-muted-foreground col-span-2">

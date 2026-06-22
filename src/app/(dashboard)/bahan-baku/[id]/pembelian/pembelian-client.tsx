@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
+import { CurrencyInput } from "@/components/shared/currency-input";
 import { getIngredient } from "@/actions/ingredients";
 import { recordStockPurchase } from "@/actions/stock-movements";
 import { UNIT_LABELS } from "@/lib/constants/units";
@@ -36,6 +37,7 @@ export function PembelianClient({ ingredient }: { ingredient: SerializedIngredie
       : ingredient.averageCost;
 
   function handleSubmit(formData: FormData) {
+    formData.set("purchaseCost", purchaseCost);
     startTransition(async () => {
       const result = await recordStockPurchase(id, formData);
       if (result.success) {
@@ -79,14 +81,11 @@ export function PembelianClient({ ingredient }: { ingredient: SerializedIngredie
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="purchaseCost">Total Biaya (Rp)</Label>
-                <Input
+                <Label htmlFor="purchaseCost">Total Biaya</Label>
+                <CurrencyInput
                   id="purchaseCost"
-                  name="purchaseCost"
-                  type="number"
-                  min="0"
                   value={purchaseCost}
-                  onChange={(e) => setPurchaseCost(e.target.value)}
+                  onChange={(value) => setPurchaseCost(String(value))}
                   required
                 />
               </div>
