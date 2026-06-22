@@ -41,6 +41,16 @@ export async function createOrUpdateStore(
 ): Promise<ActionResult<Store>> {
   try {
     const user = await getCurrentUser();
+    const socialLinksRaw = formData.get("socialLinks");
+    let socialLinks: { platform: string; value: string }[] | undefined;
+    if (typeof socialLinksRaw === "string" && socialLinksRaw) {
+      try {
+        socialLinks = JSON.parse(socialLinksRaw);
+      } catch {
+        return { success: false, error: "Format sosial media tidak valid" };
+      }
+    }
+
     const raw = {
       name: formData.get("name"),
       slug: formData.get("slug"),
@@ -49,6 +59,9 @@ export async function createOrUpdateStore(
       instagram: formData.get("instagram") || undefined,
       logoUrl: formData.get("logoUrl") || undefined,
       coverUrl: formData.get("coverUrl") || undefined,
+      socialLinks,
+      googleMapsUrl: formData.get("googleMapsUrl") || undefined,
+      showGoogleMaps: formData.get("showGoogleMaps") === "on",
     };
 
     const parsed = storeSchema.safeParse(raw);

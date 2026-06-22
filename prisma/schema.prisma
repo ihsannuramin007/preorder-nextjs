@@ -123,6 +123,9 @@ model Store {
   coverUrl    String?
   whatsapp    String?
   instagram   String?
+  socialLinks Json?
+  googleMapsUrl  String?
+  showGoogleMaps Boolean  @default(false)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

@@ -4,10 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { formatDate } from "@/lib/utils/date";
-import { MessageCircle, Instagram, Package, ShoppingBag, Users } from "lucide-react";
+import { MessageCircle, Instagram, Package, ShoppingBag, Users, MapPin } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import {
+  getSocialPlatform,
+  resolveSocialUrl,
+  type StoreSocialLink,
+} from "@/lib/constants/social-platforms";
 
 export const revalidate = 60;
 
@@ -62,6 +67,13 @@ export default async function PublicStorePage({
 
   if (!store) notFound();
 
+  const socialLinks: StoreSocialLink[] =
+    Array.isArray(store.socialLinks) && store.socialLinks.length > 0
+      ? (store.socialLinks as unknown as StoreSocialLink[])
+      : store.instagram
+        ? [{ platform: "instagram", value: store.instagram }]
+        : [];
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 pb-16 pt-8">
@@ -84,7 +96,7 @@ export default async function PublicStorePage({
           {store.description && (
             <p className="text-muted-foreground mt-2 text-sm max-w-sm">{store.description}</p>
           )}
-          <div className="flex gap-2 mt-4">
+          <div className="flex flex-wrap justify-center gap-2 mt-4">
             {store.whatsapp && (
               <Button asChild size="sm" className="bg-green-500 hover:bg-green-600 text-white">
                 <a
@@ -97,15 +109,32 @@ export default async function PublicStorePage({
                 </a>
               </Button>
             )}
-            {store.instagram && (
+            {socialLinks.map((link, i) => {
+              const def = getSocialPlatform(link.platform);
+              return (
+                <Button key={i} asChild size="sm" variant="outline">
+                  <a
+                    href={resolveSocialUrl(link.platform, link.value)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {link.platform === "instagram" ? (
+                      <Instagram className="h-4 w-4 mr-1" />
+                    ) : null}
+                    {def.label}
+                  </a>
+                </Button>
+              );
+            })}
+            {store.showGoogleMaps && store.googleMapsUrl && (
               <Button asChild size="sm" variant="outline">
                 <a
-                  href={`https://instagram.com/${store.instagram.replace("@", "")}`}
+                  href={store.googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Instagram className="h-4 w-4 mr-1" />
-                  Instagram
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Lihat Lokasi
                 </a>
               </Button>
             )}

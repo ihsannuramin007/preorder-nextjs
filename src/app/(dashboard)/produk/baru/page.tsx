@@ -20,7 +20,7 @@ export default function ProdukBaruPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [category, setCategory] = useState("OTHER");
-  const [costMode, setCostMode] = useState<"RECIPE" | "MANUAL">("RECIPE");
+  const [costMode, setCostMode] = useState<"RECIPE" | "MANUAL">("MANUAL");
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
@@ -175,18 +175,6 @@ export default function ProdukBaruPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setCostMode("RECIPE")}
-                    className={`rounded-lg border-2 p-3 text-left text-sm transition-all ${
-                      costMode === "RECIPE"
-                        ? "border-[#0D0D0D] bg-[#FFD400] shadow-sticker-sm font-semibold"
-                        : "border-[#E5E7EB] text-[#9A9A9A]"
-                    }`}
-                  >
-                    Resep (Bahan Baku)
-                    <p className="text-[11px] font-normal mt-0.5">Untuk F&amp;B, hitung dari resep</p>
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setCostMode("MANUAL")}
                     className={`rounded-lg border-2 p-3 text-left text-sm transition-all ${
                       costMode === "MANUAL"
@@ -194,8 +182,24 @@ export default function ProdukBaruPage() {
                         : "border-[#E5E7EB] text-[#9A9A9A]"
                     }`}
                   >
-                    Harga Modal Manual
-                    <p className="text-[11px] font-normal mt-0.5">Untuk barang non-F&amp;B</p>
+                    Tanpa Bahan Baku (Cepat)
+                    <p className="text-[11px] font-normal mt-0.5">
+                      Langsung input harga modal, tanpa setup resep. Cocok untuk kebanyakan toko.
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCostMode("RECIPE")}
+                    className={`rounded-lg border-2 p-3 text-left text-sm transition-all ${
+                      costMode === "RECIPE"
+                        ? "border-[#0D0D0D] bg-[#FFD400] shadow-sticker-sm font-semibold"
+                        : "border-[#E5E7EB] text-[#9A9A9A]"
+                    }`}
+                  >
+                    Pakai Resep (Bahan Baku)
+                    <p className="text-[11px] font-normal mt-0.5">
+                      Untuk F&amp;B yang ingin hitung HPP otomatis dari bahan baku.
+                    </p>
                   </button>
                 </div>
               </div>

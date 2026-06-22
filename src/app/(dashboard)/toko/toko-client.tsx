@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Card,
   CardContent,
   CardHeader,
@@ -15,11 +22,24 @@ import {
 } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
 import { OnboardingHint } from "@/components/shared/onboarding-hint";
+import { ImageUpload } from "@/components/shared/image-upload";
 import { createOrUpdateStore, getStoreSetupData } from "@/actions/store";
 import { generateSlug } from "@/lib/utils/slug";
-import { ExternalLink, Copy, PartyPopper } from "lucide-react";
+import { SOCIAL_PLATFORMS, type StoreSocialLink } from "@/lib/constants/social-platforms";
+import { ExternalLink, Copy, PartyPopper, Plus, Trash2 } from "lucide-react";
 
 type StoreSetupData = Awaited<ReturnType<typeof getStoreSetupData>>;
+
+function initialSocialLinks(store: StoreSetupData["store"]): StoreSocialLink[] {
+  const stored = store?.socialLinks;
+  if (Array.isArray(stored) && stored.length > 0) {
+    return stored as unknown as StoreSocialLink[];
+  }
+  if (store?.instagram) {
+    return [{ platform: "instagram", value: store.instagram }];
+  }
+  return [];
+}
 
 export function TokoClient({
   initialStore,
@@ -36,6 +56,22 @@ export function TokoClient({
     initialStore?.slug ?? generateSlug(businessName),
   );
   const [name, setName] = useState(initialStore?.name ?? businessName);
+  const [logoUrl, setLogoUrl] = useState(initialStore?.logoUrl ?? "");
+  const [whatsapp, setWhatsapp] = useState(
+    initialStore?.whatsapp?.replace(/^62/, "") ?? "",
+  );
+  const [socialLinks, setSocialLinks] = useState<StoreSocialLink[]>(
+    initialSocialLinks(initialStore),
+  );
+  const [hasOfflineStore, setHasOfflineStore] = useState(
+    Boolean(initialStore?.googleMapsUrl),
+  );
+  const [showGoogleMaps, setShowGoogleMaps] = useState(
+    initialStore?.showGoogleMaps ?? false,
+  );
+  const [googleMapsUrl, setGoogleMapsUrl] = useState(
+    initialStore?.googleMapsUrl ?? "",
+  );
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
@@ -45,8 +81,33 @@ export function TokoClient({
     }
   }
 
+  function addSocialLink() {
+    setSocialLinks((prev) => [...prev, { platform: "instagram", value: "" }]);
+  }
+
+  function updateSocialLink(index: number, patch: Partial<StoreSocialLink>) {
+    setSocialLinks((prev) =>
+      prev.map((link, i) => (i === index ? { ...link, ...patch } : link)),
+    );
+  }
+
+  function removeSocialLink(index: number) {
+    setSocialLinks((prev) => prev.filter((_, i) => i !== index));
+  }
+
   function handleSubmit(formData: FormData) {
     formData.set("slug", slug);
+    formData.set("logoUrl", logoUrl);
+    formData.set("whatsapp", whatsapp ? `62${whatsapp}` : "");
+    formData.set(
+      "socialLinks",
+      JSON.stringify(socialLinks.filter((link) => link.value.trim())),
+    );
+    formData.set("googleMapsUrl", hasOfflineStore ? googleMapsUrl : "");
+    if (hasOfflineStore && showGoogleMaps) {
+      formData.set("showGoogleMaps", "on");
+    }
+
     startTransition(async () => {
       const result = await createOrUpdateStore(formData);
       if (result.success) {
@@ -124,6 +185,20 @@ export function TokoClient({
         <CardContent>
           <form action={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
+              <Label>Foto Profil Toko</Label>
+              <div className="max-w-[140px]">
+                <ImageUpload
+                  value={logoUrl}
+                  onChange={setLogoUrl}
+                  folder="store-logos"
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Opsional. Ditampilkan di halaman toko publik kamu.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
               <Label htmlFor="name">Nama Toko</Label>
               <OnboardingHint
                 id="toko-setup-name"
@@ -180,32 +255,130 @@ export function TokoClient({
               />
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="whatsapp">Nomor WhatsApp</Label>
-                <OnboardingHint
-                  id="toko-setup-whatsapp"
-                  message="Pelanggan bisa langsung hubungi kamu lewat WhatsApp setelah memesan."
-                  show={!store?.whatsapp}
-                  side="bottom"
-                >
-                  <Input
+            <div className="space-y-1.5">
+              <Label htmlFor="whatsapp">Nomor WhatsApp</Label>
+              <OnboardingHint
+                id="toko-setup-whatsapp"
+                message="Pelanggan bisa langsung hubungi kamu lewat WhatsApp setelah memesan."
+                show={!store?.whatsapp}
+                side="bottom"
+              >
+                <div className="flex rounded-input overflow-hidden border border-input focus-within:ring-2 focus-within:ring-ring">
+                  <span className="flex items-center bg-muted px-3 text-sm text-muted-foreground border-r border-input whitespace-nowrap">
+                    +62
+                  </span>
+                  <input
                     id="whatsapp"
-                    name="whatsapp"
-                    defaultValue={store?.whatsapp ?? ""}
-                    placeholder="628123456789"
+                    value={whatsapp}
+                    onChange={(e) =>
+                      setWhatsapp(
+                        e.target.value
+                          .replace(/\D/g, "")
+                          .replace(/^0+/, "")
+                          .replace(/^62/, ""),
+                      )
+                    }
+                    className="flex-1 h-12 px-3 text-sm bg-white outline-none"
+                    placeholder="8123456789"
                   />
-                </OnboardingHint>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="instagram">Instagram</Label>
-                <Input
-                  id="instagram"
-                  name="instagram"
-                  defaultValue={store?.instagram ?? ""}
-                  placeholder="@namatoko"
-                />
-              </div>
+                </div>
+              </OnboardingHint>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Sosial Media</Label>
+              {socialLinks.map((link, index) => (
+                <div key={index} className="flex gap-2">
+                  <Select
+                    value={link.platform}
+                    onValueChange={(val) => updateSocialLink(index, { platform: val })}
+                  >
+                    <SelectTrigger className="w-[140px] flex-shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SOCIAL_PLATFORMS.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>
+                          {p.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    value={link.value}
+                    onChange={(e) => updateSocialLink(index, { value: e.target.value })}
+                    placeholder={
+                      SOCIAL_PLATFORMS.find((p) => p.value === link.platform)
+                        ?.placeholder ?? ""
+                    }
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => removeSocialLink(index)}
+                    aria-label="Hapus sosial media"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSocialLink}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Tambah Sosial Media
+              </Button>
+            </div>
+
+            <div className="space-y-2 rounded-lg border-2 border-[#0D0D0D] p-4">
+              <button
+                type="button"
+                onClick={() => setHasOfflineStore((v) => !v)}
+                className={`w-full text-left rounded-lg border-2 p-3 text-sm transition-all ${
+                  hasOfflineStore
+                    ? "border-[#0D0D0D] bg-[#FFD400] shadow-sticker-sm font-semibold"
+                    : "border-[#E5E7EB] text-[#9A9A9A]"
+                }`}
+              >
+                Saya punya toko offline
+                <p className="text-[11px] font-normal mt-0.5">
+                  Tambahkan link Google Maps lokasi toko kamu
+                </p>
+              </button>
+
+              {hasOfflineStore && (
+                <div className="space-y-3 pt-1">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="googleMapsUrl">Link Google Maps</Label>
+                    <Input
+                      id="googleMapsUrl"
+                      value={googleMapsUrl}
+                      onChange={(e) => setGoogleMapsUrl(e.target.value)}
+                      placeholder="https://maps.app.goo.gl/..."
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowGoogleMaps((v) => !v)}
+                    className={`w-full text-left rounded-lg border-2 p-3 text-sm transition-all ${
+                      showGoogleMaps
+                        ? "border-[#0D0D0D] bg-[#FFD400] shadow-sticker-sm font-semibold"
+                        : "border-[#E5E7EB] text-[#9A9A9A]"
+                    }`}
+                  >
+                    {showGoogleMaps ? "Tampilkan" : "Sembunyikan"} di halaman toko publik
+                    <p className="text-[11px] font-normal mt-0.5">
+                      Klik untuk {showGoogleMaps ? "menyembunyikan" : "menampilkan"} link
+                      Maps dari pelanggan
+                    </p>
+                  </button>
+                </div>
+              )}
             </div>
 
             <Button
