@@ -45,6 +45,21 @@ export const SOCIAL_PLATFORMS: SocialPlatform[] = [
     placeholder: "URL toko Tokopedia",
   },
   {
+    value: "gofood",
+    label: "GoFood",
+    placeholder: "URL toko GoFood",
+  },
+  {
+    value: "grabfood",
+    label: "GrabFood",
+    placeholder: "URL toko GrabFood",
+  },
+  {
+    value: "shopeefood",
+    label: "ShopeeFood",
+    placeholder: "URL toko ShopeeFood",
+  },
+  {
     value: "website",
     label: "Website",
     placeholder: "https://tokokamu.com",

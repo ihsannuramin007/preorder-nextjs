@@ -12,6 +12,7 @@ import {
   Calendar,
   TrendingUp,
   FileText,
+  Calculator,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/pesanan", label: "Pesanan", icon: ShoppingBag },
   { href: "/keuntungan", label: "Keuntungan", icon: TrendingUp },
   { href: "/laporan", label: "Laporan", icon: FileText },
+  { href: "/kalkulator-hpp", label: "Kalkulator HPP", icon: Calculator },
 ];
 
 export function Sidebar() {

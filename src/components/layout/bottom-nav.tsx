@@ -13,6 +13,7 @@ import {
   Calendar,
   TrendingUp,
   FileText,
+  Calculator,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -34,6 +35,7 @@ const moreItems = [
   { href: "/periode-po", label: "Periode PO", icon: Calendar },
   { href: "/keuntungan", label: "Keuntungan", icon: TrendingUp },
   { href: "/laporan", label: "Laporan", icon: FileText },
+  { href: "/kalkulator-hpp", label: "Kalkulator HPP", icon: Calculator },
 ];
 
 export function BottomNav() {

@@ -48,3 +48,13 @@ export function calculateMargin(sellingPrice: number, hpp: number): number {
 export function calculateProfit(sellingPrice: number, hpp: number): number {
   return sellingPrice - hpp;
 }
+
+export function calculateSimpleHpp(
+  totalBahanBaku: number,
+  biayaTenagaKerja: number,
+  biayaOverhead: number,
+  jumlahProduk: number
+): number {
+  if (jumlahProduk <= 0) return 0;
+  return (totalBahanBaku + biayaTenagaKerja + biayaOverhead) / jumlahProduk;
+}
