@@ -38,8 +38,20 @@ export function CampaignStatusActions({ campaign }: { campaign: Campaign }) {
     });
   }
 
+  const testIdMap: Record<string, string> = {
+    "Buka PO": "btn-buka-kampanye",
+    "Tutup PO": "btn-tutup-kampanye",
+    "Mulai Produksi": "btn-mulai-produksi",
+    "Selesai": "btn-selesaikan-kampanye",
+  };
+
   return (
-    <Button onClick={handleUpdate} disabled={isPending} size="sm">
+    <Button
+      onClick={handleUpdate}
+      disabled={isPending}
+      size="sm"
+      data-testid={testIdMap[transition.label] ?? "btn-ubah-status-kampanye"}
+    >
       {isPending ? "Memproses..." : transition.label}
     </Button>
   );

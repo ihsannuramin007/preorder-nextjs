@@ -12,24 +12,28 @@ const reports = [
     description: "Semua pesanan beserta detail pelanggan dan status",
     endpoint: "/api/export/csv?type=orders",
     format: "CSV",
+    testId: "btn-export-pesanan-csv",
   },
   {
     title: "Laporan Pesanan (Excel)",
     description: "Semua pesanan dalam format spreadsheet",
     endpoint: "/api/export/excel?type=orders",
     format: "Excel",
+    testId: "btn-export-pesanan-excel",
   },
   {
     title: "Laporan Keuntungan",
     description: "Ringkasan pendapatan, HPP, dan keuntungan per kampanye",
     endpoint: "/api/export/csv?type=profit",
     format: "CSV",
+    testId: "btn-export-keuntungan-csv",
   },
   {
     title: "Laporan Produksi",
     description: "Kebutuhan bahan baku dari semua kampanye",
     endpoint: "/api/export/csv?type=production",
     format: "CSV",
+    testId: "btn-export-produksi-csv",
   },
 ];
 
@@ -66,6 +70,7 @@ export default function LaporanPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleDownload(report.endpoint)}
+                data-testid={report.testId}
               >
                 <Download className="h-4 w-4 mr-1" />
                 Unduh

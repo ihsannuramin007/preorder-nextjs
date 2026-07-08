@@ -66,6 +66,7 @@ export default function DaftarPage() {
               name="businessName"
               placeholder="Contoh: Kopi Bu Ani"
               required
+              data-testid="txt-nama-bisnis"
             />
           </div>
           <div className="space-y-1.5">
@@ -76,6 +77,7 @@ export default function DaftarPage() {
               type="email"
               placeholder="kamu@email.com"
               required
+              data-testid="txt-email"
             />
           </div>
           <div className="space-y-1.5">
@@ -86,16 +88,17 @@ export default function DaftarPage() {
               type="password"
               placeholder="Minimal 8 karakter"
               required
+              data-testid="txt-password"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isPending}>
+          <Button type="submit" className="w-full" disabled={isPending} data-testid="btn-daftar">
             {isPending ? "Mendaftar..." : "Daftar Sekarang"}
           </Button>
         </form>
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Sudah punya akun?{" "}
-          <Link href="/masuk" className="text-primary-600 font-medium hover:underline">
+          <Link href="/masuk" className="text-primary-600 font-medium hover:underline" data-testid="link-masuk">
             Masuk
           </Link>
         </p>

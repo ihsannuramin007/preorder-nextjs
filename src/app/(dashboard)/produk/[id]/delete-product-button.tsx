@@ -32,6 +32,7 @@ export function DeleteProductButton({ productId }: { productId: string }) {
         variant="destructive"
         className="w-full"
         onClick={() => setOpen(true)}
+        data-testid="btn-hapus-produk"
       >
         <Trash2 className="h-4 w-4 mr-2" />
         Hapus Produk
@@ -46,6 +47,7 @@ export function DeleteProductButton({ productId }: { productId: string }) {
         variant="destructive"
         onConfirm={handleConfirm}
         loading={isPending}
+        testId="modal-hapus-produk"
       />
     </>
   );

@@ -30,12 +30,13 @@ async function ProductList() {
         description="Buat produk pertama kamu dan mulai terima pesanan."
         ctaLabel="Buat Produk"
         ctaHref="/produk/baru"
+        testId="empty-produk-list"
       />
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="tbl-produk">
       {products.map((product) => {
         const hpp = calculateHpp(
           product.recipeItems.map((ri) => ({
@@ -49,7 +50,7 @@ async function ProductList() {
         const cfg = statusConfig[product.status];
 
         return (
-          <Link key={product.id} href={`/produk/${product.id}`}>
+          <Link key={product.id} href={`/produk/${product.id}`} data-testid={`row-produk-${product.id}`}>
             <Card className="hover:border-primary-300 transition-colors cursor-pointer">
               <CardContent className="p-4 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
@@ -97,7 +98,7 @@ export default function ProdukPage() {
         title="Produk"
         description="Kelola produk yang kamu jual"
         actions={
-          <Button asChild>
+          <Button asChild data-testid="btn-buat-produk">
             <Link href="/produk/baru">
               <Plus className="h-4 w-4 mr-1" />
               Buat Produk
@@ -105,7 +106,7 @@ export default function ProdukPage() {
           </Button>
         }
       />
-      <Suspense fallback={<ListSkeleton />}>
+      <Suspense fallback={<ListSkeleton testId="loading-produk" />}>
         <ProductList />
       </Suspense>
     </>

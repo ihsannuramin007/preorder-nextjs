@@ -80,11 +80,13 @@ export default function TokoPage() {
                   navigator.clipboard.writeText(storeUrl);
                   toast.success("URL disalin!");
                 }}
+                aria-label="Salin URL toko"
+                data-testid="btn-salin-url-toko"
               >
                 <Copy className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" asChild>
-                <a href={storeUrl} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm" asChild aria-label="Buka toko di tab baru">
+                <a href={storeUrl} target="_blank" rel="noopener noreferrer" data-testid="btn-buka-toko">
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
@@ -109,6 +111,7 @@ export default function TokoPage() {
                 onChange={handleNameChange}
                 placeholder="Contoh: Kopi Bu Ani"
                 required
+                data-testid="txt-nama-toko"
               />
             </div>
 
@@ -131,6 +134,7 @@ export default function TokoPage() {
                   className="flex-1 h-12 px-3 text-sm bg-white outline-none"
                   placeholder="nama-toko-kamu"
                   required
+                  data-testid="txt-slug-toko"
                 />
               </div>
             </div>
@@ -143,6 +147,7 @@ export default function TokoPage() {
                 defaultValue={store?.description ?? ""}
                 placeholder="Ceritakan tentang toko kamu..."
                 rows={3}
+                data-testid="ta-deskripsi-toko"
               />
             </div>
 
@@ -154,6 +159,7 @@ export default function TokoPage() {
                   name="whatsapp"
                   defaultValue={store?.whatsapp ?? ""}
                   placeholder="628123456789"
+                  data-testid="txt-whatsapp"
                 />
               </div>
               <div className="space-y-1.5">
@@ -163,11 +169,12 @@ export default function TokoPage() {
                   name="instagram"
                   defaultValue={store?.instagram ?? ""}
                   placeholder="@namatoko"
+                  data-testid="txt-instagram"
                 />
               </div>
             </div>
 
-            <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+            <Button type="submit" disabled={isPending} className="w-full sm:w-auto" data-testid="btn-simpan-toko">
               {isPending ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
           </form>

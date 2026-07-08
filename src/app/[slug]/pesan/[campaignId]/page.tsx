@@ -100,7 +100,7 @@ export default function OrderFormPage() {
   if (!campaign) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Memuat...</div>
+        <div className="animate-pulse text-muted-foreground" data-testid="loading-form-pesan">Memuat...</div>
       </div>
     );
   }
@@ -136,14 +136,18 @@ export default function OrderFormPage() {
                               onClick={() => handleQty(v.id, -1)}
                               disabled={qty === 0}
                               className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-sm disabled:opacity-40"
+                              aria-label={`Kurangi ${v.name}`}
+                              data-testid={`btn-kurang-qty-${v.id}`}
                             >
                               <Minus className="h-3 w-3" />
                             </button>
-                            <span className="w-6 text-center text-sm font-medium">{qty}</span>
+                            <span className="w-6 text-center text-sm font-medium" data-testid={`qty-${v.id}`}>{qty}</span>
                             <button
                               type="button"
                               onClick={() => handleQty(v.id, 1)}
                               className="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center"
+                              aria-label={`Tambah ${v.name}`}
+                              data-testid={`btn-tambah-qty-${v.id}`}
                             >
                               <Plus className="h-3 w-3" />
                             </button>
@@ -168,6 +172,7 @@ export default function OrderFormPage() {
                   onChange={(e) => setCustomerData({ ...customerData, customerName: e.target.value })}
                   placeholder="Nama sesuai KTP"
                   required
+                  data-testid="txt-nama-pembeli"
                 />
               </div>
               <div className="space-y-1.5">
@@ -178,6 +183,7 @@ export default function OrderFormPage() {
                   onChange={(e) => setCustomerData({ ...customerData, customerPhone: e.target.value })}
                   placeholder="08123456789"
                   required
+                  data-testid="txt-telpon"
                 />
               </div>
               <div className="space-y-1.5">
@@ -189,6 +195,7 @@ export default function OrderFormPage() {
                   placeholder="Jl. Contoh No. 1, Kelurahan, Kecamatan, Kota"
                   rows={2}
                   required
+                  data-testid="ta-alamat"
                 />
               </div>
               <div className="space-y-1.5">
@@ -198,6 +205,7 @@ export default function OrderFormPage() {
                   value={customerData.customerNotes}
                   onChange={(e) => setCustomerData({ ...customerData, customerNotes: e.target.value })}
                   placeholder="Instruksi khusus..."
+                  data-testid="txt-catatan"
                 />
               </div>
             </CardContent>
@@ -210,7 +218,7 @@ export default function OrderFormPage() {
             </div>
           )}
 
-          <Button type="submit" disabled={isPending || orderItems.length === 0} className="w-full">
+          <Button type="submit" disabled={isPending || orderItems.length === 0} className="w-full" data-testid="btn-kirim-pesanan">
             <ShoppingBag className="h-4 w-4 mr-2" />
             {isPending ? "Memproses..." : "Kirim Pesanan"}
           </Button>

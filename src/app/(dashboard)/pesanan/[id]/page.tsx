@@ -48,7 +48,7 @@ export default async function PesananDetailPage({
         <Card>
           <CardContent className="pt-4 flex flex-wrap items-center gap-3 justify-between">
             <div className="flex items-center gap-3">
-              <Badge variant={cfg.variant} className="text-sm px-3 py-1">{cfg.label}</Badge>
+              <Badge variant={cfg.variant} className="text-sm px-3 py-1" data-testid="badge-status-pesanan">{cfg.label}</Badge>
               <p className="text-sm text-muted-foreground">
                 {formatDateTime(order.createdAt)}
               </p>
@@ -78,7 +78,7 @@ export default async function PesananDetailPage({
             <CardContent className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <User className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>{order.customerName}</span>
+                <span data-testid="order-detail-customer-name">{order.customerName}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-3.5 w-3.5 text-muted-foreground" />
@@ -112,7 +112,7 @@ export default async function PesananDetailPage({
                 ))}
                 <div className="flex justify-between pt-2 font-semibold">
                   <span>Total</span>
-                  <CurrencyDisplay amount={Number(order.totalAmount)} size="sm" className="text-primary-700" />
+                  <CurrencyDisplay amount={Number(order.totalAmount)} size="sm" className="text-primary-700" data-testid="order-detail-total" />
                 </div>
               </div>
             </CardContent>

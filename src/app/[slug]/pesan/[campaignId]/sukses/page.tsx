@@ -28,7 +28,7 @@ export default async function SuksesPage({
         {no && (
           <div className="rounded-card border border-border bg-muted p-4 mb-6">
             <p className="text-sm text-muted-foreground mb-1">Nomor Pesananmu</p>
-            <p className="text-xl font-bold text-primary-700">{no}</p>
+            <p className="text-xl font-bold text-primary-700" data-testid="order-number-display">{no}</p>
             <p className="text-xs text-muted-foreground mt-1">
               Catat nomor ini untuk melacak pesananmu
             </p>

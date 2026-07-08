@@ -90,6 +90,7 @@ export default function PeriodePOBaruPage() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Contoh: PO Mingguan #1 - Juni 2024"
                 required
+                data-testid="txt-nama-periode-po"
               />
             </div>
             <div className="space-y-1.5">
@@ -100,6 +101,7 @@ export default function PeriodePOBaruPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Info tambahan untuk pelanggan..."
                 rows={2}
+                data-testid="ta-deskripsi-periode-po"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -111,6 +113,7 @@ export default function PeriodePOBaruPage() {
                   value={formData.openDate}
                   onChange={(e) => setFormData({ ...formData, openDate: e.target.value })}
                   required
+                  data-testid="txt-tanggal-buka"
                 />
               </div>
               <div className="space-y-1.5">
@@ -121,6 +124,7 @@ export default function PeriodePOBaruPage() {
                   value={formData.closeDate}
                   onChange={(e) => setFormData({ ...formData, closeDate: e.target.value })}
                   required
+                  data-testid="txt-tanggal-tutup"
                 />
               </div>
             </div>
@@ -162,6 +166,7 @@ export default function PeriodePOBaruPage() {
                       key={p.id}
                       type="button"
                       onClick={() => toggleProduct(p.id)}
+                      data-testid={`chk-produk-${p.id}`}
                       className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
                         selected
                           ? "border-primary-500 bg-primary-50"
@@ -184,7 +189,7 @@ export default function PeriodePOBaruPage() {
           </CardContent>
         </Card>
 
-        <Button type="submit" disabled={isPending} className="w-full">
+        <Button type="submit" disabled={isPending} className="w-full" data-testid="btn-buat-periode-po">
           {isPending ? "Membuat..." : "Buat Periode PO"}
         </Button>
       </form>

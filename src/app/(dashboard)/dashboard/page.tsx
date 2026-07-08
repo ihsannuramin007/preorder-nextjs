@@ -78,10 +78,10 @@ async function DashboardContent() {
   const estimatedProfit = revenue - totalHpp;
 
   const metrics = [
-    { label: "Periode PO Aktif", value: openCampaigns, icon: Calendar, color: "text-primary-600" },
-    { label: "Menunggu Pembayaran", value: pendingPayments, icon: Clock, color: "text-warning" },
-    { label: "Perlu Verifikasi", value: needVerification, icon: AlertCircle, color: "text-error" },
-    { label: "Pesanan Hari Ini", value: ordersToday, icon: ShoppingBag, color: "text-info" },
+    { label: "Periode PO Aktif", value: openCampaigns, icon: Calendar, color: "text-primary-600", testId: "widget-open-campaign" },
+    { label: "Menunggu Pembayaran", value: pendingPayments, icon: Clock, color: "text-warning", testId: "widget-pending-payment" },
+    { label: "Perlu Verifikasi", value: needVerification, icon: AlertCircle, color: "text-error", testId: "widget-need-verification" },
+    { label: "Pesanan Hari Ini", value: ordersToday, icon: ShoppingBag, color: "text-info", testId: "widget-orders-today" },
   ];
 
   return (
@@ -101,7 +101,7 @@ async function DashboardContent() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {metrics.map((m) => (
-          <Card key={m.label}>
+          <Card key={m.label} data-testid={m.testId}>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <m.icon className={`h-4 w-4 ${m.color}`} />
@@ -124,11 +124,11 @@ async function DashboardContent() {
           <CardContent className="space-y-3">
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Total Pendapatan</span>
-              <CurrencyDisplay amount={revenue} size="sm" className="font-semibold" />
+              <CurrencyDisplay amount={revenue} size="sm" className="font-semibold" data-testid="widget-revenue" />
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Total HPP</span>
-              <CurrencyDisplay amount={totalHpp} size="sm" className="text-muted-foreground" />
+              <CurrencyDisplay amount={totalHpp} size="sm" className="text-muted-foreground" data-testid="widget-total-hpp" />
             </div>
             <div className="flex justify-between border-t pt-3">
               <span className="text-sm font-semibold">Estimasi Keuntungan</span>
@@ -136,6 +136,7 @@ async function DashboardContent() {
                 amount={estimatedProfit}
                 size="sm"
                 className={`font-bold ${estimatedProfit >= 0 ? "text-success" : "text-error"}`}
+                data-testid="widget-estimated-profit"
               />
             </div>
           </CardContent>

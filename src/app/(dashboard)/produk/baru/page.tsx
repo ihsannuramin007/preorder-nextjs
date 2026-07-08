@@ -120,6 +120,7 @@ export default function ProdukBaruPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Contoh: Kopi Susu Gula Aren"
                   required
+                  data-testid="txt-nama-produk"
                 />
               </div>
               <div className="space-y-1.5">
@@ -130,12 +131,13 @@ export default function ProdukBaruPage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Ceritakan produk ini..."
                   rows={3}
+                  data-testid="ta-deskripsi-produk"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label>Kategori</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger data-testid="ddl-kategori"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {CATEGORY_OPTIONS.map((c) => (
                       <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
@@ -143,7 +145,7 @@ export default function ProdukBaruPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" onClick={() => setStep(2)}>
+              <Button className="w-full" onClick={() => setStep(2)} data-testid="btn-lanjut-step-1">
                 Lanjut →
               </Button>
             </CardContent>
@@ -184,13 +186,13 @@ export default function ProdukBaruPage() {
                   </Button>
                 </div>
               ))}
-              <Button variant="outline" onClick={addVariant} className="w-full">
+              <Button variant="outline" onClick={addVariant} className="w-full" data-testid="btn-tambah-varian">
                 <Plus className="h-4 w-4 mr-1" />
                 Tambah Varian
               </Button>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1">← Kembali</Button>
-                <Button onClick={() => setStep(3)} className="flex-1">Lanjut →</Button>
+                <Button variant="outline" onClick={() => setStep(1)} className="flex-1" data-testid="btn-kembali-step-2">← Kembali</Button>
+                <Button onClick={() => setStep(3)} className="flex-1" data-testid="btn-lanjut-step-2">Lanjut →</Button>
               </div>
             </CardContent>
           </Card>
@@ -210,6 +212,7 @@ export default function ProdukBaruPage() {
                   onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
                   placeholder="25000"
                   required
+                  data-testid="txt-harga-dasar"
                 />
                 <p className="text-xs text-muted-foreground">
                   Harga dasar. Varian dapat menambah/mengurangi harga ini.
@@ -228,8 +231,8 @@ export default function ProdukBaruPage() {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(2)} className="flex-1">← Kembali</Button>
-                <Button onClick={handleSubmit} disabled={isPending} className="flex-1">
+                <Button variant="outline" onClick={() => setStep(2)} className="flex-1" data-testid="btn-kembali-step-3">← Kembali</Button>
+                <Button onClick={handleSubmit} disabled={isPending} className="flex-1" data-testid="btn-buat-produk-submit">
                   {isPending ? "Menyimpan..." : "Buat Produk"}
                 </Button>
               </div>

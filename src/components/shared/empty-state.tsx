@@ -11,6 +11,7 @@ type EmptyStateProps = {
   ctaHref?: string;
   onCtaClick?: () => void;
   className?: string;
+  testId?: string;
 };
 
 export function EmptyState({
@@ -21,9 +22,11 @@ export function EmptyState({
   ctaHref,
   onCtaClick,
   className,
+  testId,
 }: EmptyStateProps) {
   return (
     <div
+      data-testid={testId}
       className={cn(
         "flex flex-col items-center justify-center py-16 px-4 text-center",
         className

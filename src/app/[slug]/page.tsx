@@ -70,13 +70,13 @@ export default async function PublicStorePage({
               <Package className="h-10 w-10 text-primary-600" />
             )}
           </div>
-          <h1 className="text-2xl font-bold text-foreground">{store.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground" data-testid="store-name">{store.name}</h1>
           {store.description && (
-            <p className="text-muted-foreground mt-2 text-sm max-w-sm">{store.description}</p>
+            <p className="text-muted-foreground mt-2 text-sm max-w-sm" data-testid="store-description">{store.description}</p>
           )}
           <div className="flex gap-2 mt-4">
             {store.whatsapp && (
-              <Button asChild size="sm" className="bg-green-500 hover:bg-green-600 text-white">
+              <Button asChild size="sm" className="bg-green-500 hover:bg-green-600 text-white" data-testid="btn-whatsapp">
                 <a
                   href={`https://wa.me/${store.whatsapp.replace(/\D/g, "")}`}
                   target="_blank"
@@ -88,7 +88,7 @@ export default async function PublicStorePage({
               </Button>
             )}
             {store.instagram && (
-              <Button asChild size="sm" variant="outline">
+              <Button asChild size="sm" variant="outline" data-testid="btn-instagram">
                 <a
                   href={`https://instagram.com/${store.instagram.replace("@", "")}`}
                   target="_blank"
@@ -120,7 +120,7 @@ export default async function PublicStorePage({
                   <Badge variant="success" className="flex-shrink-0">Buka</Badge>
                 </div>
                 <div className="flex gap-2">
-                  <Button asChild className="flex-1">
+                  <Button asChild className="flex-1" data-testid={`btn-pesan-sekarang-${campaign.id}`}>
                     <Link href={`/${store.slug}/pesan/${campaign.id}`}>
                       <ShoppingBag className="h-4 w-4 mr-2" />
                       Pesan Sekarang

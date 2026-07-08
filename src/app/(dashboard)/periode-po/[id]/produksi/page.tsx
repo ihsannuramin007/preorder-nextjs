@@ -60,7 +60,7 @@ export default async function ProduksiPage({
                 </p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm" data-testid="tbl-produksi-bahan">
                     <thead>
                       <tr className="border-b text-left">
                         <th className="pb-2 font-semibold">Bahan</th>
@@ -70,7 +70,7 @@ export default async function ProduksiPage({
                     </thead>
                     <tbody className="divide-y">
                       {sheet.items.map((item) => (
-                        <tr key={item.id}>
+                        <tr key={item.id} data-testid={`row-produksi-bahan-${item.id}`}>
                           <td className="py-2.5">{item.ingredientName}</td>
                           <td className="py-2.5 text-right">
                             {Number(item.totalQuantity).toFixed(2)} {UNIT_LABELS[item.unit]}

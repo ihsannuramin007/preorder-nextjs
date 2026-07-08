@@ -32,6 +32,7 @@ export function ProductStatusActions({ productId, status }: Props) {
           className="w-full"
           disabled={isPending}
           onClick={() => update("PUBLISHED", "diterbitkan")}
+          data-testid="btn-terbitkan-produk"
         >
           {isPending ? "Memproses..." : "Terbitkan"}
         </Button>
@@ -44,6 +45,7 @@ export function ProductStatusActions({ productId, status }: Props) {
             className="w-full"
             disabled={isPending}
             onClick={() => update("DRAFT", "dijadikan Draft")}
+            data-testid="btn-jadikan-draft-produk"
           >
             {isPending ? "Memproses..." : "Jadikan Draft"}
           </Button>
@@ -52,6 +54,7 @@ export function ProductStatusActions({ productId, status }: Props) {
             className="w-full text-muted-foreground"
             disabled={isPending}
             onClick={() => update("ARCHIVED", "diarsipkan")}
+            data-testid="btn-arsipkan-produk"
           >
             {isPending ? "Memproses..." : "Arsipkan"}
           </Button>
@@ -64,6 +67,7 @@ export function ProductStatusActions({ productId, status }: Props) {
             className="w-full"
             disabled={isPending}
             onClick={() => update("PUBLISHED", "diaktifkan kembali")}
+            data-testid="btn-aktifkan-kembali-produk"
           >
             {isPending ? "Memproses..." : "Aktifkan Kembali"}
           </Button>
@@ -72,6 +76,7 @@ export function ProductStatusActions({ productId, status }: Props) {
             className="w-full"
             disabled={isPending}
             onClick={() => update("DRAFT", "dijadikan Draft")}
+            data-testid="btn-jadikan-draft-produk"
           >
             {isPending ? "Memproses..." : "Jadikan Draft"}
           </Button>

@@ -134,6 +134,7 @@ export default function ResepPage() {
                     <div
                       key={ri.id}
                       className="flex items-center justify-between py-2 border-b last:border-0"
+                      data-testid={`row-resep-${ri.ingredientId}`}
                     >
                       <div>
                         <p className="text-sm font-medium">{ri.ingredient.name}</p>
@@ -148,6 +149,8 @@ export default function ResepPage() {
                         className="h-8 w-8"
                         onClick={() => handleRemove(ri.ingredientId)}
                         disabled={isPending}
+                        aria-label={`Hapus ${ri.ingredient.name} dari resep`}
+                        data-testid={`btn-hapus-resep-item-${ri.ingredientId}`}
                       >
                         <Trash2 className="h-3.5 w-3.5 text-error" />
                       </Button>
@@ -177,6 +180,8 @@ export default function ResepPage() {
                   className="flex h-12 w-full rounded-input border border-input bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   value={selectedIngredientId}
                   onChange={(e) => setSelectedIngredientId(e.target.value)}
+                  data-testid="ddl-pilih-bahan"
+                  aria-label="Pilih bahan baku"
                 >
                   <option value="">Pilih bahan baku...</option>
                   {availableIngredients.map((ing) => (
@@ -194,8 +199,10 @@ export default function ResepPage() {
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     className="flex-1"
+                    data-testid="txt-qty-resep"
+                    aria-label="Jumlah bahan dalam resep"
                   />
-                  <Button onClick={handleAdd} disabled={isPending}>
+                  <Button onClick={handleAdd} disabled={isPending} data-testid="btn-tambah-bahan-ke-resep">
                     <Plus className="h-4 w-4 mr-1" />
                     Tambah
                   </Button>

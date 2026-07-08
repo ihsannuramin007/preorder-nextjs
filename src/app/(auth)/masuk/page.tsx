@@ -48,6 +48,7 @@ export default function MasukPage() {
           onClick={handleGoogleLogin}
           disabled={googlePending}
           type="button"
+          data-testid="btn-masuk-google"
         >
           {googlePending ? "Mengalihkan..." : "Masuk dengan Google"}
         </Button>
@@ -70,6 +71,7 @@ export default function MasukPage() {
               type="email"
               placeholder="kamu@email.com"
               required
+              data-testid="txt-email"
             />
           </div>
           <div className="space-y-1.5">
@@ -78,6 +80,7 @@ export default function MasukPage() {
               <Link
                 href="/lupa-password"
                 className="text-xs text-primary-600 hover:underline"
+                data-testid="link-lupa-password"
               >
                 Lupa password?
               </Link>
@@ -88,16 +91,17 @@ export default function MasukPage() {
               type="password"
               placeholder="••••••••"
               required
+              data-testid="txt-password"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isPending}>
+          <Button type="submit" className="w-full" disabled={isPending} data-testid="btn-masuk">
             {isPending ? "Memproses..." : "Masuk"}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
           Belum punya akun?{" "}
-          <Link href="/daftar" className="text-primary-600 font-medium hover:underline">
+          <Link href="/daftar" className="text-primary-600 font-medium hover:underline" data-testid="link-daftar">
             Daftar gratis
           </Link>
         </p>

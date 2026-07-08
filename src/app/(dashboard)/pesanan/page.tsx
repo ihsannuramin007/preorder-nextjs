@@ -30,16 +30,17 @@ async function OrderList() {
         icon={ShoppingBag}
         title="Belum ada pesanan"
         description="Pesanan dari pelanggan akan muncul di sini setelah kamu membuka periode PO."
+        testId="empty-pesanan-list"
       />
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="tbl-pesanan">
       {orders.map((order) => {
         const cfg = statusConfig[order.status];
         return (
-          <Link key={order.id} href={`/pesanan/${order.id}`}>
+          <Link key={order.id} href={`/pesanan/${order.id}`} data-testid={`row-pesanan-${order.id}`}>
             <Card className="hover:border-primary-300 transition-colors cursor-pointer">
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
@@ -71,7 +72,7 @@ export default function PesananPage() {
         title="Pesanan"
         description="Kelola semua pesanan dari pelanggan"
       />
-      <Suspense fallback={<ListSkeleton />}>
+      <Suspense fallback={<ListSkeleton testId="loading-pesanan" />}>
         <OrderList />
       </Suspense>
     </>

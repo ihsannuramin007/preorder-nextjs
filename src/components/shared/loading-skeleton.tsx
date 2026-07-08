@@ -10,9 +10,9 @@ export function CardSkeleton() {
   );
 }
 
-export function ListSkeleton({ count = 5 }: { count?: number }) {
+export function ListSkeleton({ count = 5, testId }: { count?: number; testId?: string }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-testid={testId}>
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="rounded-card border border-border bg-white p-4 flex items-center gap-4">
           <Skeleton className="h-12 w-12 rounded-md flex-shrink-0" />

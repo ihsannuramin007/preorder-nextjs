@@ -51,7 +51,7 @@ export default async function CampaignDetailPage({
         <Card>
           <CardContent className="pt-4 flex flex-wrap gap-3 items-center justify-between">
             <div className="flex items-center gap-3">
-              <Badge variant={cfg.variant} className="text-sm px-3 py-1">{cfg.label}</Badge>
+              <Badge variant={cfg.variant} className="text-sm px-3 py-1" data-testid="badge-status-kampanye">{cfg.label}</Badge>
               <p className="text-sm text-muted-foreground">
                 {formatDate(campaign.openDate)} — {formatDate(campaign.closeDate)}
               </p>

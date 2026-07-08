@@ -48,13 +48,13 @@ export default function BahanBakuBaruPage() {
           <form action={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="name">Nama Bahan</Label>
-              <Input id="name" name="name" placeholder="Contoh: Kopi Arabika" required />
+              <Input id="name" name="name" placeholder="Contoh: Kopi Arabika" required data-testid="txt-nama-bahan" />
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="unit">Satuan</Label>
               <Select name="unit" required>
-                <SelectTrigger id="unit">
+                <SelectTrigger id="unit" data-testid="ddl-satuan">
                   <SelectValue placeholder="Pilih satuan" />
                 </SelectTrigger>
                 <SelectContent>
@@ -76,6 +76,7 @@ export default function BahanBakuBaruPage() {
                   min="0.01"
                   placeholder="1"
                   required
+                  data-testid="txt-jumlah-pembelian"
                 />
                 <p className="text-xs text-muted-foreground">Contoh: 1 (untuk 1 kg)</p>
               </div>
@@ -88,12 +89,13 @@ export default function BahanBakuBaruPage() {
                   min="0"
                   placeholder="180000"
                   required
+                  data-testid="txt-harga-pembelian"
                 />
               </div>
             </div>
 
             <div className="flex gap-3">
-              <Button type="submit" disabled={isPending} className="flex-1 sm:flex-none">
+              <Button type="submit" disabled={isPending} className="flex-1 sm:flex-none" data-testid="btn-simpan-bahan-baku">
                 {isPending ? "Menyimpan..." : "Simpan Bahan Baku"}
               </Button>
               <Button variant="outline" asChild>

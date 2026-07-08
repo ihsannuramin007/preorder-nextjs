@@ -21,17 +21,18 @@ async function IngredientList() {
         description="Tambahkan bahan baku untuk menghitung biaya produksi (HPP) secara otomatis."
         ctaLabel="Tambah Bahan Baku"
         ctaHref="/bahan-baku/baru"
+        testId="empty-bahan-baku-list"
       />
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="tbl-bahan-baku">
       {ingredients.map((ingredient) => {
         const unitLabel = UNIT_LABELS[ingredient.unit];
         const costPerUnit = Number(ingredient.purchasePrice) / Number(ingredient.purchaseQty);
         return (
-          <Link key={ingredient.id} href={`/bahan-baku/${ingredient.id}`}>
+          <Link key={ingredient.id} href={`/bahan-baku/${ingredient.id}`} data-testid={`row-bahan-baku-${ingredient.id}`}>
             <Card className="hover:border-primary-300 transition-colors cursor-pointer">
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
@@ -62,7 +63,7 @@ export default function BahanBakuPage() {
         title="Bahan Baku"
         description="Kelola bahan baku untuk perhitungan HPP otomatis"
         actions={
-          <Button asChild>
+          <Button asChild data-testid="btn-tambah-bahan-baku">
             <Link href="/bahan-baku/baru">
               <Plus className="h-4 w-4 mr-1" />
               Tambah Bahan
@@ -70,7 +71,7 @@ export default function BahanBakuPage() {
           </Button>
         }
       />
-      <Suspense fallback={<ListSkeleton />}>
+      <Suspense fallback={<ListSkeleton testId="loading-bahan-baku" />}>
         <IngredientList />
       </Suspense>
     </>

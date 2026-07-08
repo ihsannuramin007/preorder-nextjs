@@ -78,7 +78,7 @@ export default function BahanBakuDetailPage() {
             <Button variant="ghost" asChild>
               <Link href="/bahan-baku"><ArrowLeft className="h-4 w-4 mr-1" />Kembali</Link>
             </Button>
-            <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
+            <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)} aria-label="Hapus bahan baku" data-testid="btn-hapus-bahan-baku">
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -92,7 +92,7 @@ export default function BahanBakuDetailPage() {
           <form action={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="name">Nama Bahan</Label>
-              <Input id="name" name="name" defaultValue={ingredient.name} required />
+              <Input id="name" name="name" defaultValue={ingredient.name} required data-testid="txt-nama-bahan" />
             </div>
 
             <div className="space-y-1.5">
@@ -131,7 +131,7 @@ export default function BahanBakuDetailPage() {
               </div>
             </div>
 
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending} data-testid="btn-simpan-bahan-baku">
               {isPending ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
           </form>
@@ -147,6 +147,7 @@ export default function BahanBakuDetailPage() {
         variant="destructive"
         onConfirm={handleDelete}
         loading={isPending}
+        testId="modal-hapus-bahan-baku"
       />
     </>
   );

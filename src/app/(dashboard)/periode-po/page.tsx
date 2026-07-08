@@ -31,16 +31,17 @@ async function CampaignList() {
         description="Buat periode PO untuk mulai menerima pesanan dari pelanggan."
         ctaLabel="Buat Periode PO"
         ctaHref="/periode-po/baru"
+        testId="empty-periode-po-list"
       />
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="tbl-periode-po">
       {campaigns.map((campaign) => {
         const cfg = statusConfig[campaign.status];
         return (
-          <Link key={campaign.id} href={`/periode-po/${campaign.id}`}>
+          <Link key={campaign.id} href={`/periode-po/${campaign.id}`} data-testid={`row-periode-po-${campaign.id}`}>
             <Card className="hover:border-primary-300 transition-colors cursor-pointer">
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
@@ -72,7 +73,7 @@ export default function PeriodePOPage() {
         title="Periode PO"
         description="Kelola kampanye pre-order kamu"
         actions={
-          <Button asChild>
+          <Button asChild data-testid="btn-buat-periode-po">
             <Link href="/periode-po/baru">
               <Plus className="h-4 w-4 mr-1" />
               Buat Periode PO
@@ -80,7 +81,7 @@ export default function PeriodePOPage() {
           </Button>
         }
       />
-      <Suspense fallback={<ListSkeleton />}>
+      <Suspense fallback={<ListSkeleton testId="loading-periode-po" />}>
         <CampaignList />
       </Suspense>
     </>

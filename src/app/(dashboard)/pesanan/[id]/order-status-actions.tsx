@@ -33,7 +33,7 @@ export function OrderStatusActions({ orderId, status }: { orderId: string; statu
   }
 
   return (
-    <Button onClick={handleUpdate} disabled={isPending} size="sm">
+    <Button onClick={handleUpdate} disabled={isPending} size="sm" data-testid="btn-ubah-status-pesanan">
       {isPending ? "Memproses..." : transition.label}
     </Button>
   );

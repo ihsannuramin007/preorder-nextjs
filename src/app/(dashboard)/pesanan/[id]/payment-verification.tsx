@@ -56,7 +56,7 @@ export function PaymentVerification({ orderId, paymentProofUrl }: PaymentVerific
         </CardHeader>
         <CardContent className="space-y-3">
           {paymentProofUrl ? (
-            <Button variant="outline" size="sm" onClick={() => setProofOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setProofOpen(true)} data-testid="btn-lihat-bukti-bayar">
               <Eye className="h-4 w-4 mr-1" />
               Lihat Bukti Pembayaran
             </Button>
@@ -64,7 +64,7 @@ export function PaymentVerification({ orderId, paymentProofUrl }: PaymentVerific
             <p className="text-sm text-yellow-700">Pelanggan belum mengunggah bukti pembayaran.</p>
           )}
           <div className="flex gap-2">
-            <Button onClick={handleApprove} disabled={isPending} size="sm" className="bg-success hover:bg-green-600">
+            <Button onClick={handleApprove} disabled={isPending} size="sm" className="bg-success hover:bg-green-600" data-testid="btn-setujui-pembayaran">
               <CheckCircle className="h-4 w-4 mr-1" />
               Setujui
             </Button>
@@ -73,6 +73,7 @@ export function PaymentVerification({ orderId, paymentProofUrl }: PaymentVerific
               size="sm"
               onClick={() => setRejectOpen(true)}
               disabled={isPending}
+              data-testid="btn-tolak-pembayaran"
             >
               <XCircle className="h-4 w-4 mr-1" />
               Tolak
@@ -110,7 +111,7 @@ export function PaymentVerification({ orderId, paymentProofUrl }: PaymentVerific
       )}
 
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm" data-testid="modal-tolak-pembayaran">
           <DialogHeader>
             <DialogTitle>Tolak Pembayaran</DialogTitle>
           </DialogHeader>
@@ -122,11 +123,12 @@ export function PaymentVerification({ orderId, paymentProofUrl }: PaymentVerific
               onChange={(e) => setReason(e.target.value)}
               placeholder="Contoh: Jumlah transfer tidak sesuai"
               rows={3}
+              data-testid="ta-alasan-penolakan"
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)}>Batal</Button>
-            <Button variant="destructive" onClick={handleReject} disabled={isPending}>
+            <Button variant="destructive" onClick={handleReject} disabled={isPending} data-testid="btn-konfirmasi-tolak">
               {isPending ? "Memproses..." : "Tolak Pembayaran"}
             </Button>
           </DialogFooter>

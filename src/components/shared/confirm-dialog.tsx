@@ -20,6 +20,7 @@ type ConfirmDialogProps = {
   onConfirm: () => void;
   variant?: "default" | "destructive";
   loading?: boolean;
+  testId?: string;
 };
 
 export function ConfirmDialog({
@@ -32,10 +33,11 @@ export function ConfirmDialog({
   onConfirm,
   variant = "default",
   loading,
+  testId = "modal-confirm",
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm" data-testid={testId}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -45,6 +47,7 @@ export function ConfirmDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={loading}
+            data-testid={`${testId}-btn-batal`}
           >
             {cancelLabel}
           </Button>
@@ -52,6 +55,7 @@ export function ConfirmDialog({
             variant={variant === "destructive" ? "destructive" : "default"}
             onClick={onConfirm}
             disabled={loading}
+            data-testid={`${testId}-btn-konfirmasi`}
           >
             {loading ? "Memproses..." : confirmLabel}
           </Button>
