@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, Prisma } from "@prisma/client";
 import { calculateHpp } from "@/lib/utils/hpp";
 import type { ActionResult } from "@/types";
 
@@ -111,8 +111,6 @@ export async function createPublicOrder(data: {
     if (campaign.status !== "OPEN") return { success: false, error: "Periode PO sudah tidak aktif" };
     if (new Date() > campaign.closeDate) return { success: false, error: "Periode PO sudah berakhir" };
 
-    const orderNumber = await generateOrderNumber(campaign.storeId);
-
     let totalAmount = 0;
     let totalHpp = 0;
 
@@ -153,21 +151,35 @@ export async function createPublicOrder(data: {
       })
     );
 
-    const order = await prisma.order.create({
-      data: {
-        campaignId: data.campaignId,
-        orderNumber,
-        customerName: data.customerName,
-        customerPhone: data.customerPhone,
-        customerAddress: data.customerAddress,
-        customerNotes: data.customerNotes,
-        totalAmount,
-        totalHpp,
-        items: { create: orderItems },
-      },
-    });
+    const MAX_ATTEMPTS = 5;
+    let order;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const orderNumber = await generateOrderNumber(campaign.storeId);
+      try {
+        order = await prisma.order.create({
+          data: {
+            campaignId: data.campaignId,
+            orderNumber,
+            customerName: data.customerName,
+            customerPhone: data.customerPhone,
+            customerAddress: data.customerAddress,
+            customerNotes: data.customerNotes,
+            totalAmount,
+            totalHpp,
+            items: { create: orderItems },
+          },
+        });
+        break;
+      } catch (e) {
+        const isOrderNumberConflict =
+          e instanceof Prisma.PrismaClientKnownRequestError &&
+          e.code === "P2002" &&
+          (e.meta?.target as string[] | undefined)?.includes("orderNumber");
+        if (!isOrderNumberConflict || attempt === MAX_ATTEMPTS) throw e;
+      }
+    }
 
-    return { success: true, data: { orderNumber: order.orderNumber, orderId: order.id } };
+    return { success: true, data: { orderNumber: order!.orderNumber, orderId: order!.id } };
   } catch (e) {
     return { success: false, error: "Terjadi kesalahan saat membuat pesanan" };
   }
