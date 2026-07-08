@@ -5,28 +5,33 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = searchParams.get("next");
 
   if (code) {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.user) {
-      const existingUser = await prisma.user.findUnique({
+      let dbUser = await prisma.user.findUnique({
         where: { supabaseId: data.user.id },
+        include: { store: true },
       });
 
-      if (!existingUser) {
-        await prisma.user.create({
+      if (!dbUser) {
+        dbUser = await prisma.user.create({
           data: {
             supabaseId: data.user.id,
             email: data.user.email!,
             businessName: data.user.user_metadata?.full_name ?? "Toko Baru",
           },
+          include: { store: true },
         });
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      // If caller specified an explicit next (e.g. OAuth), honour it.
+      // Otherwise route based on whether the user already has a store.
+      const redirectTo = next ?? (dbUser?.store ? "/dashboard" : "/toko?welcome=1");
+      return NextResponse.redirect(`${origin}${redirectTo}`);
     }
   }
 

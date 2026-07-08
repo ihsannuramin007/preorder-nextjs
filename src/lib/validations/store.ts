@@ -12,6 +12,20 @@ export const storeSchema = z.object({
   instagram: z.string().optional(),
   logoUrl: z.string().optional(),
   coverUrl: z.string().optional(),
+  socialLinks: z
+    .array(
+      z.object({
+        platform: z.string().min(1),
+        value: z.string().min(1),
+      }),
+    )
+    .optional(),
+  googleMapsUrl: z
+    .string()
+    .url("Link Google Maps tidak valid")
+    .optional()
+    .or(z.literal("")),
+  showGoogleMaps: z.boolean().optional(),
 });
 
 export type StoreInput = z.infer<typeof storeSchema>;

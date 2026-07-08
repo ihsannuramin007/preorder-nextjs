@@ -4,9 +4,53 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { formatDate } from "@/lib/utils/date";
-import { MessageCircle, Instagram, Package, ShoppingBag, Users } from "lucide-react";
+import {
+  MessageCircle,
+  Instagram,
+  Facebook,
+  Globe,
+  Store,
+  Package,
+  ShoppingBag,
+  Users,
+  MapPin,
+} from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
+import {
+  getSocialPlatform,
+  resolveSocialUrl,
+  type StoreSocialLink,
+} from "@/lib/constants/social-platforms";
+
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0115.54 3h-3.09v12.4a2.592 2.592 0 01-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 004.3 1.38V7.3s-1.88.09-3.24-1.48z" />
+    </svg>
+  );
+}
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+const PLATFORM_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  instagram: Instagram,
+  tiktok: TikTokIcon,
+  facebook: Facebook,
+  twitter: XIcon,
+  website: Globe,
+};
+
+const FallbackPlatformIcon = Store;
+
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,
@@ -49,7 +93,7 @@ export default async function PublicStorePage({
         },
         include: {
           products: {
-            include: { product: { include: { variants: true } } },
+            include: { product: true },
           },
         },
         orderBy: { closeDate: "asc" },
@@ -59,13 +103,27 @@ export default async function PublicStorePage({
 
   if (!store) notFound();
 
+  const socialLinks: StoreSocialLink[] =
+    Array.isArray(store.socialLinks) && store.socialLinks.length > 0
+      ? (store.socialLinks as unknown as StoreSocialLink[])
+      : store.instagram
+        ? [{ platform: "instagram", value: store.instagram }]
+        : [];
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 pb-16 pt-8">
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center mb-4 overflow-hidden">
+          <div className="relative w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center mb-4 overflow-hidden">
             {store.logoUrl ? (
-              <img src={store.logoUrl} alt={store.name} className="w-full h-full object-cover" />
+              <Image
+                src={store.logoUrl}
+                alt={store.name}
+                fill
+                className="object-cover"
+                sizes="80px"
+                priority
+              />
             ) : (
               <Package className="h-10 w-10 text-primary-600" />
             )}
@@ -74,7 +132,7 @@ export default async function PublicStorePage({
           {store.description && (
             <p className="text-muted-foreground mt-2 text-sm max-w-sm">{store.description}</p>
           )}
-          <div className="flex gap-2 mt-4">
+          <div className="flex flex-wrap justify-center gap-2 mt-4">
             {store.whatsapp && (
               <Button asChild size="sm" className="bg-green-500 hover:bg-green-600 text-white">
                 <a
@@ -87,15 +145,31 @@ export default async function PublicStorePage({
                 </a>
               </Button>
             )}
-            {store.instagram && (
+            {socialLinks.map((link, i) => {
+              const def = getSocialPlatform(link.platform);
+              const Icon = PLATFORM_ICONS[link.platform] ?? FallbackPlatformIcon;
+              return (
+                <Button key={i} asChild size="sm" variant="outline">
+                  <a
+                    href={resolveSocialUrl(link.platform, link.value)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Icon className="h-4 w-4 mr-1" />
+                    {def.label}
+                  </a>
+                </Button>
+              );
+            })}
+            {store.showGoogleMaps && store.googleMapsUrl && (
               <Button asChild size="sm" variant="outline">
                 <a
-                  href={`https://instagram.com/${store.instagram.replace("@", "")}`}
+                  href={store.googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Instagram className="h-4 w-4 mr-1" />
-                  Instagram
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Lihat Lokasi
                 </a>
               </Button>
             )}
@@ -147,12 +221,14 @@ export default async function PublicStorePage({
                   key={product.id}
                   className="rounded-card border border-border bg-white overflow-hidden"
                 >
-                  <div className="aspect-video bg-muted flex items-center justify-center overflow-hidden">
+                  <div className="relative aspect-video bg-muted flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
-                      <img
+                      <Image
                         src={product.imageUrl}
                         alt={product.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 50vw"
                       />
                     ) : (
                       <Package className="h-8 w-8 text-muted-foreground" />

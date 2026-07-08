@@ -57,7 +57,7 @@ export async function createGroupOrder(data: {
 export async function addMemberOrder(
   sessionCode: string,
   memberName: string,
-  items: { variantId: string; quantity: number }[]
+  items: { productId: string; quantity: number }[]
 ): Promise<ActionResult<{ memberName: string }>> {
   try {
     const groupOrder = await prisma.groupOrder.findUnique({
@@ -71,30 +71,27 @@ export async function addMemberOrder(
 
     let memberSubtotal = 0;
     const itemsWithPrice: {
-      variantId: string;
+      productId: string;
       productName: string;
-      variantName: string;
       unitPrice: number;
       quantity: number;
       subtotal: number;
     }[] = [];
 
     for (const item of items) {
-      const variant = await prisma.productVariant.findUnique({
-        where: { id: item.variantId },
-        include: { product: true },
+      const product = await prisma.product.findUnique({
+        where: { id: item.productId },
       });
 
-      if (!variant || !variant.isActive) continue;
+      if (!product) continue;
 
-      const unitPrice = Number(variant.product.basePrice) + Number(variant.priceAdjustment);
+      const unitPrice = Number(product.basePrice);
       const subtotal = unitPrice * item.quantity;
       memberSubtotal += subtotal;
 
       itemsWithPrice.push({
-        variantId: item.variantId,
-        productName: variant.product.name,
-        variantName: variant.name,
+        productId: item.productId,
+        productName: product.name,
         unitPrice,
         quantity: item.quantity,
         subtotal,
@@ -111,9 +108,8 @@ export async function addMemberOrder(
           subtotal: memberSubtotal,
           items: {
             create: itemsWithPrice.map((i) => ({
-              variantId: i.variantId,
+              productId: i.productId,
               productName: i.productName,
-              variantName: i.variantName,
               unitPrice: i.unitPrice,
               quantity: i.quantity,
               subtotal: i.subtotal,
@@ -139,35 +135,93 @@ export async function addMemberOrder(
   }
 }
 
+import type {
+  GroupOrder, GroupMemberOrder, GroupMemberOrderItem,
+  Campaign, CampaignProduct, Product,
+} from "@prisma/client";
+
+type FullGroupOrder = GroupOrder & {
+  campaign?: (Campaign & {
+    products?: (CampaignProduct & {
+      product: Product | null;
+    })[];
+  }) | null;
+  memberOrders?: (GroupMemberOrder & { items?: GroupMemberOrderItem[] })[];
+};
+
+function serializeGroupOrder<T extends FullGroupOrder>(g: T) {
+  return {
+    ...g,
+    totalAmount: Number(g.totalAmount),
+    campaign: g.campaign
+      ? {
+          ...g.campaign,
+          products: g.campaign.products?.map((cp) => ({
+            ...cp,
+            product: cp.product
+              ? {
+                  ...cp.product,
+                  basePrice: Number(cp.product.basePrice),
+                }
+              : cp.product,
+          })),
+        }
+      : g.campaign,
+    memberOrders: g.memberOrders?.map((m) => ({
+      ...m,
+      subtotal: Number(m.subtotal),
+      items: m.items?.map((item) => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        subtotal: Number(item.subtotal),
+      })),
+    })),
+  };
+}
+
 export async function getPublicGroupOrder(sessionCode: string) {
-  return prisma.groupOrder.findUnique({
+  const g = await prisma.groupOrder.findUnique({
     where: { sessionCode },
     include: {
       campaign: {
         include: {
           products: {
-            include: {
-              product: {
-                include: {
-                  variants: {
-                    where: { isActive: true },
-                  },
-                },
-              },
-            },
+            include: { product: true },
           },
         },
       },
       memberOrders: {
         orderBy: { createdAt: "asc" },
         include: {
-          items: {
-            orderBy: { createdAt: "asc" },
-          },
+          items: { orderBy: { createdAt: "asc" } },
         },
       },
     },
   });
+  return g ? serializeGroupOrder(g) : null;
+}
+
+export async function uploadGroupPaymentProof(
+  sessionCode: string,
+  path: string
+): Promise<ActionResult<void>> {
+  try {
+    const groupOrder = await prisma.groupOrder.findUnique({ where: { sessionCode } });
+    if (!groupOrder) return { success: false, error: "Sesi tidak ditemukan" };
+    if (groupOrder.status !== "CLOSED") {
+      return { success: false, error: "Sesi belum ditutup atau sudah diverifikasi" };
+    }
+
+    await prisma.groupOrder.update({
+      where: { sessionCode },
+      data: { paymentProofUrl: path, status: "PAYMENT_REVIEW", rejectionReason: null },
+    });
+
+    return { success: true, data: undefined };
+  } catch (e) {
+    console.error("uploadGroupPaymentProof:", e);
+    return { success: false, error: "Gagal mengunggah bukti pembayaran" };
+  }
 }
 
 export async function closeGroupOrder(sessionCode: string): Promise<ActionResult<void>> {
@@ -201,23 +255,49 @@ async function getStore() {
   return dbUser.store;
 }
 
-export async function getDashboardGroupOrders() {
+export async function getDashboardGroupOrders(filters?: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}) {
   const store = await getStore();
+  const pageSize = filters?.pageSize ?? 10;
+  const page = filters?.page ?? 1;
+  const skip = (page - 1) * pageSize;
 
-  return prisma.groupOrder.findMany({
-    where: { campaign: { storeId: store.id } },
-    orderBy: { createdAt: "desc" },
-    include: {
-      campaign: { select: { name: true } },
-      _count: { select: { memberOrders: true } },
-    },
-  });
+  const where = {
+    campaign: { storeId: store.id },
+    ...(filters?.search
+      ? {
+          OR: [
+            { facilitatorName: { contains: filters.search, mode: "insensitive" as const } },
+            { sessionCode: { contains: filters.search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.groupOrder.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: {
+        campaign: { select: { name: true } },
+        _count: { select: { memberOrders: true } },
+      },
+      skip,
+      take: pageSize,
+    }),
+    prisma.groupOrder.count({ where }),
+  ]);
+
+  return { data: rows.map((g) => ({ ...g, totalAmount: Number(g.totalAmount) })), total };
 }
 
 export async function getDashboardGroupOrder(id: string) {
   const store = await getStore();
 
-  const groupOrder = await prisma.groupOrder.findFirst({
+  const g = await prisma.groupOrder.findFirst({
     where: { id, campaign: { storeId: store.id } },
     include: {
       campaign: { select: { name: true, id: true } },
@@ -229,13 +309,25 @@ export async function getDashboardGroupOrder(id: string) {
       },
     },
   });
-
-  return groupOrder;
+  if (!g) return null;
+  return {
+    ...g,
+    totalAmount: Number(g.totalAmount),
+    memberOrders: g.memberOrders.map((m) => ({
+      ...m,
+      subtotal: Number(m.subtotal),
+      items: m.items.map((item) => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        subtotal: Number(item.subtotal),
+      })),
+    })),
+  };
 }
 
 export async function updateGroupOrderStatus(
   id: string,
-  status: "COLLECTING" | "CLOSED" | "CANCELLED"
+  status: "COLLECTING" | "CLOSED" | "PAYMENT_REVIEW" | "PAID" | "CANCELLED"
 ): Promise<ActionResult<void>> {
   try {
     const store = await getStore();

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, Prisma } from "@prisma/client";
 import { calculateHpp } from "@/lib/utils/hpp";
 import type { ActionResult } from "@/types";
 
@@ -20,6 +20,22 @@ async function getStore() {
   return dbUser.store;
 }
 
+import type { Order, OrderItem, Campaign } from "@prisma/client";
+
+function serializeOrder<T extends Order & { items: OrderItem[]; campaign?: Campaign | null }>(o: T) {
+  return {
+    ...o,
+    totalAmount: Number(o.totalAmount),
+    totalHpp: Number(o.totalHpp),
+    items: o.items.map((item) => ({
+      ...item,
+      unitPrice: Number(item.unitPrice),
+      unitHpp: Number(item.unitHpp),
+      subtotal: Number(item.subtotal),
+    })),
+  };
+}
+
 async function generateOrderNumber(storeId: string): Promise<string> {
   const year = new Date().getFullYear();
   const count = await prisma.order.count({
@@ -32,36 +48,49 @@ export async function getOrders(filters?: {
   status?: OrderStatus;
   search?: string;
   campaignId?: string;
+  page?: number;
+  pageSize?: number;
 }) {
   const store = await getStore();
-  return prisma.order.findMany({
-    where: {
-      campaign: { storeId: store.id },
-      ...(filters?.status ? { status: filters.status } : {}),
-      ...(filters?.campaignId ? { campaignId: filters.campaignId } : {}),
-      ...(filters?.search
-        ? {
-            OR: [
-              { customerName: { contains: filters.search, mode: "insensitive" } },
-              { orderNumber: { contains: filters.search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    include: {
-      campaign: true,
-      items: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const pageSize = filters?.pageSize ?? 10;
+  const page = filters?.page ?? 1;
+  const skip = (page - 1) * pageSize;
+
+  const where = {
+    campaign: { storeId: store.id },
+    ...(filters?.status ? { status: filters.status } : {}),
+    ...(filters?.campaignId ? { campaignId: filters.campaignId } : {}),
+    ...(filters?.search
+      ? {
+          OR: [
+            { customerName: { contains: filters.search, mode: "insensitive" as const } },
+            { orderNumber: { contains: filters.search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      include: { campaign: true, items: true },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  return { data: rows.map(serializeOrder), total };
 }
 
 export async function getOrder(id: string) {
   const store = await getStore();
-  return prisma.order.findFirst({
+  const row = await prisma.order.findFirst({
     where: { id, campaign: { storeId: store.id } },
     include: { campaign: true, items: true },
   });
+  return row ? serializeOrder(row) : null;
 }
 
 export async function createPublicOrder(data: {
@@ -70,8 +99,8 @@ export async function createPublicOrder(data: {
   customerPhone: string;
   customerAddress: string;
   customerNotes?: string;
-  items: { variantId: string; quantity: number }[];
-}): Promise<ActionResult<{ orderNumber: string }>> {
+  items: { productId: string; quantity: number }[];
+}): Promise<ActionResult<{ orderNumber: string; orderId: string }>> {
   try {
     const campaign = await prisma.campaign.findUnique({
       where: { id: data.campaignId },
@@ -82,34 +111,29 @@ export async function createPublicOrder(data: {
     if (campaign.status !== "OPEN") return { success: false, error: "Periode PO sudah tidak aktif" };
     if (new Date() > campaign.closeDate) return { success: false, error: "Periode PO sudah berakhir" };
 
-    const orderNumber = await generateOrderNumber(campaign.storeId);
-
     let totalAmount = 0;
     let totalHpp = 0;
 
     const orderItems = await Promise.all(
       data.items.map(async (item) => {
-        const variant = await prisma.productVariant.findUnique({
-          where: { id: item.variantId },
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
           include: {
-            product: {
-              include: { recipeItems: { include: { ingredient: true } } },
-            },
+            recipeItems: { include: { ingredient: true } },
+            additionalCosts: true,
           },
         });
 
-        if (!variant) throw new Error("Varian tidak ditemukan");
+        if (!product) throw new Error("Produk tidak ditemukan");
 
-        const unitPrice =
-          Number(variant.product.basePrice) + Number(variant.priceAdjustment);
+        const unitPrice = Number(product.basePrice);
         const unitHpp = calculateHpp(
-          variant.product.recipeItems.map((ri) => ({
+          product.recipeItems.map((ri) => ({
             quantity: Number(ri.quantity),
-            ingredient: {
-              purchaseQty: Number(ri.ingredient.purchaseQty),
-              purchasePrice: Number(ri.ingredient.purchasePrice),
-            },
-          }))
+            ingredient: { averageCost: Number(ri.ingredient.averageCost) },
+          })),
+          product.additionalCosts.map((c) => ({ amount: Number(c.amount) })),
+          product.costMode === "MANUAL" ? Number(product.manualCostPrice ?? 0) : undefined
         );
         const subtotal = unitPrice * item.quantity;
 
@@ -117,9 +141,8 @@ export async function createPublicOrder(data: {
         totalHpp += unitHpp * item.quantity;
 
         return {
-          variantId: item.variantId,
-          productName: variant.product.name,
-          variantName: variant.name,
+          productId: item.productId,
+          productName: product.name,
           unitPrice,
           unitHpp,
           quantity: item.quantity,
@@ -128,24 +151,68 @@ export async function createPublicOrder(data: {
       })
     );
 
-    const order = await prisma.order.create({
-      data: {
-        campaignId: data.campaignId,
-        orderNumber,
-        customerName: data.customerName,
-        customerPhone: data.customerPhone,
-        customerAddress: data.customerAddress,
-        customerNotes: data.customerNotes,
-        totalAmount,
-        totalHpp,
-        items: { create: orderItems },
-      },
-    });
+    const MAX_ATTEMPTS = 5;
+    let order;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const orderNumber = await generateOrderNumber(campaign.storeId);
+      try {
+        order = await prisma.order.create({
+          data: {
+            campaignId: data.campaignId,
+            orderNumber,
+            customerName: data.customerName,
+            customerPhone: data.customerPhone,
+            customerAddress: data.customerAddress,
+            customerNotes: data.customerNotes,
+            totalAmount,
+            totalHpp,
+            items: { create: orderItems },
+          },
+        });
+        break;
+      } catch (e) {
+        const isOrderNumberConflict =
+          e instanceof Prisma.PrismaClientKnownRequestError &&
+          e.code === "P2002" &&
+          (e.meta?.target as string[] | undefined)?.includes("orderNumber");
+        if (!isOrderNumberConflict || attempt === MAX_ATTEMPTS) throw e;
+      }
+    }
 
-    return { success: true, data: { orderNumber: order.orderNumber } };
+    return { success: true, data: { orderNumber: order!.orderNumber, orderId: order!.id } };
   } catch (e) {
     return { success: false, error: "Terjadi kesalahan saat membuat pesanan" };
   }
+}
+
+export async function getPublicOrder(orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: true,
+      campaign: { include: { store: { select: { name: true, slug: true, whatsapp: true } } } },
+    },
+  });
+  if (!order) return null;
+
+  return {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    customerName: order.customerName,
+    customerPhone: order.customerPhone,
+    status: order.status,
+    totalAmount: Number(order.totalAmount),
+    paymentProofUrl: order.paymentProofUrl,
+    rejectionReason: order.rejectionReason,
+    createdAt: order.createdAt,
+    items: order.items.map((item) => ({
+      id: item.id,
+      productName: item.productName,
+      quantity: item.quantity,
+      subtotal: Number(item.subtotal),
+    })),
+    store: order.campaign.store,
+  };
 }
 
 export async function updateOrderStatus(

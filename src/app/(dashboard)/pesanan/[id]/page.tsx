@@ -9,6 +9,7 @@ import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { formatDateTime } from "@/lib/utils/date";
 import { OrderStatusActions } from "./order-status-actions";
 import { PaymentVerification } from "./payment-verification";
+import { WhatsAppActions } from "./whatsapp-actions";
 import { ArrowLeft, User, MapPin, Phone, ShoppingBag } from "lucide-react";
 import type { OrderStatus } from "@prisma/client";
 
@@ -54,6 +55,17 @@ export default async function PesananDetailPage({
               </p>
             </div>
             <OrderStatusActions orderId={order.id} status={order.status} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-4">
+            <WhatsAppActions
+              customerPhone={order.customerPhone}
+              orderNumber={order.orderNumber}
+              status={order.status}
+              rejectionReason={order.rejectionReason}
+            />
           </CardContent>
         </Card>
 
@@ -104,7 +116,6 @@ export default async function PesananDetailPage({
                   <div key={item.id} className="flex justify-between py-1.5 border-b last:border-0 text-sm">
                     <div>
                       <p className="font-medium">{item.productName}</p>
-                      {item.variantName && <p className="text-xs text-muted-foreground">{item.variantName}</p>}
                       <p className="text-xs text-muted-foreground">x{item.quantity}</p>
                     </div>
                     <CurrencyDisplay amount={Number(item.subtotal)} size="sm" />

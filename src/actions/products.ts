@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { productSchema } from "@/lib/validations/product";
 import { calculateHpp } from "@/lib/utils/hpp";
+import { calculateCapacity } from "@/lib/utils/production";
 import type { ActionResult } from "@/types";
 
 async function getStore() {
@@ -23,14 +23,23 @@ async function getStore() {
 function serializeProduct<
   T extends {
     basePrice: unknown;
-    variants: Array<{ priceAdjustment: unknown }>;
-    recipeItems: Array<{ quantity: unknown; ingredient: { purchaseQty: unknown; purchasePrice: unknown } }>;
+    manualCostPrice?: unknown;
+    recipeItems: Array<{
+      quantity: unknown;
+      ingredient: {
+        purchaseQty: unknown;
+        purchasePrice: unknown;
+        averageCost: unknown;
+        currentStock: unknown;
+        minimumStock: unknown;
+      };
+    }>;
   },
 >(p: T) {
   return {
     ...p,
     basePrice: Number(p.basePrice),
-    variants: p.variants.map((v) => ({ ...v, priceAdjustment: Number(v.priceAdjustment) })),
+    manualCostPrice: p.manualCostPrice != null ? Number(p.manualCostPrice) : null,
     recipeItems: p.recipeItems.map((ri) => ({
       ...ri,
       quantity: Number(ri.quantity),
@@ -38,6 +47,9 @@ function serializeProduct<
         ...ri.ingredient,
         purchaseQty: Number(ri.ingredient.purchaseQty),
         purchasePrice: Number(ri.ingredient.purchasePrice),
+        averageCost: Number(ri.ingredient.averageCost),
+        currentStock: Number(ri.ingredient.currentStock),
+        minimumStock: Number(ri.ingredient.minimumStock),
       },
     })),
   };
@@ -47,10 +59,41 @@ export async function getProducts() {
   const store = await getStore();
   const rows = await prisma.product.findMany({
     where: { storeId: store.id },
-    include: { variants: true, recipeItems: { include: { ingredient: true } } },
+    include: { recipeItems: { include: { ingredient: true } } },
     orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
   });
   return rows.map(serializeProduct);
+}
+
+export async function getProductsList(filters?: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const store = await getStore();
+  const pageSize = filters?.pageSize ?? 10;
+  const page = filters?.page ?? 1;
+  const skip = (page - 1) * pageSize;
+
+  const where = {
+    storeId: store.id,
+    ...(filters?.search
+      ? { name: { contains: filters.search, mode: "insensitive" as const } }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: { recipeItems: { include: { ingredient: true } } },
+      orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
+      skip,
+      take: pageSize,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  return { data: rows.map(serializeProduct), total };
 }
 
 export async function getProduct(id: string) {
@@ -58,21 +101,27 @@ export async function getProduct(id: string) {
   const row = await prisma.product.findFirst({
     where: { id, storeId: store.id },
     include: {
-      variants: true,
       recipeItems: { include: { ingredient: true } },
+      additionalCosts: true,
     },
   });
-  return row ? serializeProduct(row) : null;
+  if (!row) return null;
+  return {
+    ...serializeProduct(row),
+    additionalCosts: row.additionalCosts.map((c) => ({ ...c, amount: Number(c.amount) })),
+  };
 }
 
 export async function createProduct(data: {
   name: string;
   description?: string;
   imageUrl?: string;
+  images?: string[];
   category: string;
+  costMode?: string;
+  manualCostPrice?: number;
   basePrice: number;
   status: string;
-  variants: { name: string; priceAdjustment: number; sku?: string }[];
 }): Promise<ActionResult<{ id: string }>> {
   try {
     const store = await getStore();
@@ -81,17 +130,13 @@ export async function createProduct(data: {
         storeId: store.id,
         name: data.name,
         description: data.description,
-        imageUrl: data.imageUrl,
+        imageUrl: data.images?.[0] ?? data.imageUrl,
+        images: data.images ?? [],
         category: data.category as any,
+        costMode: (data.costMode ?? "RECIPE") as any,
+        manualCostPrice: data.manualCostPrice,
         basePrice: data.basePrice,
         status: data.status as any,
-        variants: {
-          create: data.variants.map((v) => ({
-            name: v.name,
-            priceAdjustment: v.priceAdjustment,
-            sku: v.sku,
-          })),
-        },
       },
     });
     revalidatePath("/produk");
@@ -107,16 +152,23 @@ export async function updateProduct(
     name: string;
     description: string;
     imageUrl: string;
+    images: string[];
     category: string;
+    costMode: string;
+    manualCostPrice: number | null;
     basePrice: number;
     status: string;
   }>
 ): Promise<ActionResult> {
   try {
     const store = await getStore();
+    const { images, ...rest } = data;
     await prisma.product.update({
       where: { id, storeId: store.id },
-      data: data as any,
+      data: {
+        ...rest,
+        ...(images ? { images, imageUrl: images[0] } : {}),
+      } as any,
     });
     revalidatePath("/produk");
     revalidatePath(`/produk/${id}`);
@@ -141,17 +193,48 @@ export async function getProductHpp(productId: string): Promise<number> {
   const store = await getStore();
   const product = await prisma.product.findFirst({
     where: { id: productId, storeId: store.id },
-    include: { recipeItems: { include: { ingredient: true } } },
+    include: {
+      recipeItems: { include: { ingredient: true } },
+      additionalCosts: true,
+    },
   });
   if (!product) return 0;
 
   return calculateHpp(
     product.recipeItems.map((ri) => ({
       quantity: Number(ri.quantity),
-      ingredient: {
-        purchaseQty: Number(ri.ingredient.purchaseQty),
-        purchasePrice: Number(ri.ingredient.purchasePrice),
-      },
+      ingredient: { averageCost: Number(ri.ingredient.averageCost) },
+    })),
+    product.additionalCosts.map((c) => ({ amount: Number(c.amount) })),
+    product.costMode === "MANUAL" ? Number(product.manualCostPrice ?? 0) : undefined
+  );
+}
+
+export async function getProductCapacity(productId: string): Promise<number> {
+  const store = await getStore();
+  const product = await prisma.product.findFirst({
+    where: { id: productId, storeId: store.id },
+    include: { recipeItems: { include: { ingredient: true } } },
+  });
+  if (!product) return 0;
+
+  return calculateCapacity(
+    product.recipeItems.map((ri) => ({
+      quantity: Number(ri.quantity),
+      ingredient: { currentStock: Number(ri.ingredient.currentStock) },
     }))
   );
+}
+
+export async function getProductionRecords(productId: string) {
+  const store = await getStore();
+  const product = await prisma.product.findFirst({ where: { id: productId, storeId: store.id } });
+  if (!product) return [];
+
+  const rows = await prisma.productionRecord.findMany({
+    where: { productId },
+    include: { campaign: { select: { name: true } } },
+    orderBy: { productionDate: "desc" },
+  });
+  return rows.map((r) => ({ ...r, totalCost: Number(r.totalCost) }));
 }

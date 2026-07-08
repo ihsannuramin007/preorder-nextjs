@@ -6,6 +6,12 @@ export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   DESSERT: "Dessert",
   FROZEN_FOOD: "Frozen Food",
   SNACK: "Snack",
+  FASHION: "Fashion",
+  CRAFT: "Kerajinan",
+  ACCESSORY: "Aksesoris",
+  ELECTRONIC: "Elektronik",
+  HOUSEHOLD: "Rumah Tangga",
+  BEAUTY: "Kecantikan",
   OTHER: "Lainnya",
 };
 

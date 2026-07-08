@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { inter } from "@/lib/fonts";
+import { plusJakartaSans } from "@/lib/fonts";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -18,10 +18,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={inter.variable}>
+    <html lang="id" className={plusJakartaSans.variable}>
       <body className="min-h-screen bg-background font-sans antialiased" suppressHydrationWarning>
         {children}
-        <Toaster position="top-center" richColors />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            classNames: {
+              toast: "!rounded-full !border-2 !border-[#0D0D0D] !shadow-sticker !font-sans",
+              success: "!bg-[#FFD400] !text-[#111111]",
+              error: "!bg-[#FF3B6B] !text-white",
+            },
+          }}
+        />
       </body>
     </html>
   );

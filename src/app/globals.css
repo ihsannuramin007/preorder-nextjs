@@ -4,26 +4,26 @@
 
 @layer base {
   :root {
-    --background: 250 250 250;
-    --foreground: 17 24 39;
+    --background: 255 255 255;
+    --foreground: 17 17 17;
     --card: 255 255 255;
-    --card-foreground: 17 24 39;
+    --card-foreground: 17 17 17;
     --popover: 255 255 255;
-    --popover-foreground: 17 24 39;
-    --primary: 139 92 246;
-    --primary-foreground: 255 255 255;
-    --secondary: 243 244 246;
-    --secondary-foreground: 17 24 39;
-    --muted: 243 244 246;
-    --muted-foreground: 107 114 128;
-    --accent: 245 243 255;
-    --accent-foreground: 124 58 237;
-    --destructive: 239 68 68;
+    --popover-foreground: 17 17 17;
+    --primary: 255 212 0;
+    --primary-foreground: 17 17 17;
+    --secondary: 17 17 17;
+    --secondary-foreground: 255 255 255;
+    --muted: 247 247 247;
+    --muted-foreground: 154 154 154;
+    --accent: 255 59 107;
+    --accent-foreground: 255 255 255;
+    --destructive: 255 59 107;
     --destructive-foreground: 255 255 255;
     --border: 229 231 235;
     --input: 229 231 235;
-    --ring: 139 92 246;
-    --radius: 0.75rem;
+    --ring: 255 212 0;
+    --radius: 9999px;
   }
 
   * {
@@ -40,4 +40,27 @@
   .text-balance {
     text-wrap: balance;
   }
+}
+
+::selection {
+  background: rgb(255 212 0 / 0.3);
+  color: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FFD400;
 }

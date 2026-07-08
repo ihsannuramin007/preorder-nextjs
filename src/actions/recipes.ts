@@ -83,6 +83,9 @@ export async function getRecipeItems(productId: string) {
       ...ri.ingredient,
       purchaseQty: Number(ri.ingredient.purchaseQty),
       purchasePrice: Number(ri.ingredient.purchasePrice),
+      averageCost: Number(ri.ingredient.averageCost),
+      currentStock: Number(ri.ingredient.currentStock),
+      minimumStock: Number(ri.ingredient.minimumStock),
     },
   }));
 }

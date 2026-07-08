@@ -19,27 +19,84 @@ async function getStore() {
   return dbUser.store;
 }
 
-export async function getCampaigns() {
+import type { CampaignProduct, Product, Order, OrderItem } from "@prisma/client";
+
+function serializeCampaignProduct<
+  T extends CampaignProduct & { product: Product | null },
+>(cp: T) {
+  return {
+    ...cp,
+    product: cp.product
+      ? {
+          ...cp.product,
+          basePrice: Number(cp.product.basePrice),
+        }
+      : cp.product,
+  };
+}
+
+function serializeCampaignOrder<T extends Order & { items: OrderItem[] }>(o: T) {
+  return {
+    ...o,
+    totalAmount: Number(o.totalAmount),
+    totalHpp: Number(o.totalHpp),
+    items: o.items.map((item) => ({
+      ...item,
+      unitPrice: Number(item.unitPrice),
+      unitHpp: Number(item.unitHpp),
+      subtotal: Number(item.subtotal),
+    })),
+  };
+}
+
+export async function getCampaigns(filters?: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}) {
   const store = await getStore();
-  return prisma.campaign.findMany({
-    where: { storeId: store.id },
-    include: {
-      products: { include: { product: true } },
-      _count: { select: { orders: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const pageSize = filters?.pageSize ?? 10;
+  const page = filters?.page ?? 1;
+  const skip = (page - 1) * pageSize;
+
+  const where = {
+    storeId: store.id,
+    ...(filters?.search
+      ? { name: { contains: filters.search, mode: "insensitive" as const } }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.campaign.findMany({
+      where,
+      include: {
+        _count: { select: { orders: true, products: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    prisma.campaign.count({ where }),
+  ]);
+
+  return { data: rows, total };
 }
 
 export async function getCampaign(id: string) {
   const store = await getStore();
-  return prisma.campaign.findFirst({
+  const c = await prisma.campaign.findFirst({
     where: { id, storeId: store.id },
     include: {
-      products: { include: { product: { include: { variants: true } } } },
+      products: { include: { product: true } },
       orders: { include: { items: true } },
     },
   });
+  if (!c) return null;
+  return {
+    ...c,
+    products: c.products.map(serializeCampaignProduct),
+    orders: c.orders.map(serializeCampaignOrder),
+  };
 }
 
 export async function createCampaign(data: {

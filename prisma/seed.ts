@@ -28,8 +28,6 @@ const INGREDIENTS = [
   { name: "Teh Celup",        unit: Unit.PCS,      purchaseQty: 50,   purchasePrice: 12_000 },
 ] as const;
 
-type IngredientKey = typeof INGREDIENTS[number]["name"];
-
 const PRODUCTS = [
   {
     name: "Kopi Susu Gula Aren",
@@ -37,11 +35,6 @@ const PRODUCTS = [
     category: ProductCategory.BEVERAGE,
     basePrice: 18_000,
     status: "PUBLISHED" as const,
-    variants: [
-      { name: "250ml",  priceAdjustment: 0,     sku: "KSA-250" },
-      { name: "350ml",  priceAdjustment: 3_000,  sku: "KSA-350" },
-      { name: "500ml",  priceAdjustment: 8_000,  sku: "KSA-500" },
-    ],
     recipe: [
       { ingredient: "Kopi Arabika",    quantity: 20  },
       { ingredient: "Susu Full Cream", quantity: 200 },
@@ -53,14 +46,10 @@ const PRODUCTS = [
   },
   {
     name: "Kopi Hitam",
-    description: "Kopi arabika tubruk klasik. Tersedia dalam pilihan panas dan es.",
+    description: "Kopi arabika tubruk klasik, disajikan panas.",
     category: ProductCategory.BEVERAGE,
     basePrice: 12_000,
     status: "PUBLISHED" as const,
-    variants: [
-      { name: "Panas", priceAdjustment: 0,     sku: "KH-HOT" },
-      { name: "Es",    priceAdjustment: 2_000,  sku: "KH-ICE" },
-    ],
     recipe: [
       { ingredient: "Kopi Arabika",    quantity: 15 },
       { ingredient: "Gula Pasir",      quantity: 10 },
@@ -74,10 +63,6 @@ const PRODUCTS = [
     category: ProductCategory.BEVERAGE,
     basePrice: 20_000,
     status: "PUBLISHED" as const,
-    variants: [
-      { name: "250ml", priceAdjustment: 0,     sku: "CS-250" },
-      { name: "500ml", priceAdjustment: 7_000,  sku: "CS-500" },
-    ],
     recipe: [
       { ingredient: "Coklat Bubuk",    quantity: 30  },
       { ingredient: "Susu Full Cream", quantity: 250 },
@@ -93,10 +78,6 @@ const PRODUCTS = [
     category: ProductCategory.BEVERAGE,
     basePrice: 7_000,
     status: "DRAFT" as const,
-    variants: [
-      { name: "350ml", priceAdjustment: 0,    sku: "ETM-350" },
-      { name: "600ml", priceAdjustment: 3000, sku: "ETM-600" },
-    ],
     recipe: [
       { ingredient: "Teh Celup",       quantity: 2   },
       { ingredient: "Gula Pasir",      quantity: 20  },
@@ -192,23 +173,20 @@ async function main() {
     }
   }
 
-  // ── 4. Upsert Products + Variants ────────────────────────────────────────────
+  // ── 4. Upsert Products ───────────────────────────────────────────────────────
 
-  section("Produk & Varian");
-  const productMap: Record<string, { id: string; variantIds: Record<string, string> }> = {};
+  section("Produk");
+  const productMap: Record<string, { id: string }> = {};
 
   for (const [idx, prod] of PRODUCTS.entries()) {
     let productId: string;
-    let variantIds: Record<string, string> = {};
 
     const existing = await prisma.product.findFirst({
       where: { storeId: store.id, name: prod.name },
-      include: { variants: true },
     });
 
     if (existing) {
       productId = existing.id;
-      existing.variants.forEach((v) => { variantIds[v.name] = v.id; });
       log(`  ↩ Skip (sudah ada): ${prod.name}`);
     } else {
       const created = await prisma.product.create({
@@ -220,22 +198,13 @@ async function main() {
           basePrice: prod.basePrice,
           status: prod.status,
           displayOrder: idx,
-          variants: {
-            create: prod.variants.map((v) => ({
-              name: v.name,
-              priceAdjustment: v.priceAdjustment,
-              sku: v.sku,
-            })),
-          },
         },
-        include: { variants: true },
       });
       productId = created.id;
-      created.variants.forEach((v) => { variantIds[v.name] = v.id; });
-      log(`  ✅ Dibuat: ${prod.name} (${prod.variants.length} varian, status=${prod.status})`);
+      log(`  ✅ Dibuat: ${prod.name} (status=${prod.status})`);
     }
 
-    productMap[prod.name] = { id: productId, variantIds };
+    productMap[prod.name] = { id: productId };
   }
 
   // ── 5. Upsert Recipe Items ────────────────────────────────────────────────────
@@ -265,13 +234,6 @@ async function main() {
   const publishedNames = PRODUCTS.filter((p) => p.status === "PUBLISHED").map((p) => p.name);
   const publishedProducts = publishedNames.map((n) => productMap[n]);
 
-  // Helper to get variant id safely
-  function variantId(productName: string, variantName: string): string {
-    const v = productMap[productName]?.variantIds[variantName];
-    if (!v) throw new Error(`Varian tidak ditemukan: ${productName} / ${variantName}`);
-    return v;
-  }
-
   // Compute HPP per recipe
   function computeHpp(productName: string): number {
     const prod = PRODUCTS.find((p) => p.name === productName)!;
@@ -284,7 +246,6 @@ async function main() {
   // Compute order totals from items
   type SeedItem = {
     productName: string;
-    variantName: string;
     quantity: number;
   };
 
@@ -293,16 +254,14 @@ async function main() {
     let totalHpp = 0;
     const orderItems = items.map((item) => {
       const prod = PRODUCTS.find((p) => p.name === item.productName)!;
-      const variant = prod.variants.find((v) => v.name === item.variantName)!;
-      const unitPrice = prod.basePrice + variant.priceAdjustment;
+      const unitPrice = prod.basePrice;
       const unitHpp = computeHpp(item.productName);
       const subtotal = unitPrice * item.quantity;
       totalAmount += subtotal;
       totalHpp += unitHpp * item.quantity;
       return {
-        variantId: variantId(item.productName, item.variantName),
+        productId: productMap[item.productName].id,
         productName: item.productName,
-        variantName: item.variantName,
         unitPrice,
         unitHpp,
         quantity: item.quantity,
@@ -351,24 +310,24 @@ async function main() {
       {
         customer: CUSTOMERS[0],
         items: [
-          { productName: "Kopi Susu Gula Aren", variantName: "350ml", quantity: 2 },
-          { productName: "Coklat Susu", variantName: "250ml", quantity: 1 },
+          { productName: "Kopi Susu Gula Aren", quantity: 2 },
+          { productName: "Coklat Susu", quantity: 1 },
         ],
         status: OrderStatus.COMPLETED,
       },
       {
         customer: CUSTOMERS[1],
         items: [
-          { productName: "Kopi Hitam", variantName: "Es", quantity: 3 },
+          { productName: "Kopi Hitam", quantity: 3 },
         ],
         status: OrderStatus.COMPLETED,
       },
       {
         customer: CUSTOMERS[2],
         items: [
-          { productName: "Kopi Susu Gula Aren", variantName: "500ml", quantity: 1 },
-          { productName: "Kopi Hitam", variantName: "Panas", quantity: 2 },
-          { productName: "Coklat Susu", variantName: "500ml", quantity: 1 },
+          { productName: "Kopi Susu Gula Aren", quantity: 1 },
+          { productName: "Kopi Hitam", quantity: 2 },
+          { productName: "Coklat Susu", quantity: 1 },
         ],
         status: OrderStatus.COMPLETED,
       },
@@ -460,44 +419,44 @@ async function main() {
     const ordersC2: { customer: typeof CUSTOMERS[0]; items: SeedItem[]; status: OrderStatus; notes?: string }[] = [
       {
         customer: CUSTOMERS[3],
-        items: [{ productName: "Kopi Susu Gula Aren", variantName: "250ml", quantity: 2 }],
+        items: [{ productName: "Kopi Susu Gula Aren", quantity: 2 }],
         status: OrderStatus.PENDING_PAYMENT,
       },
       {
         customer: CUSTOMERS[4],
         items: [
-          { productName: "Coklat Susu", variantName: "500ml", quantity: 1 },
-          { productName: "Kopi Hitam", variantName: "Es", quantity: 1 },
+          { productName: "Coklat Susu", quantity: 1 },
+          { productName: "Kopi Hitam", quantity: 1 },
         ],
         status: OrderStatus.PAYMENT_REVIEW,
       },
       {
         customer: CUSTOMERS[5],
         items: [
-          { productName: "Kopi Hitam", variantName: "Es", quantity: 3 },
-          { productName: "Kopi Susu Gula Aren", variantName: "350ml", quantity: 2 },
+          { productName: "Kopi Hitam", quantity: 3 },
+          { productName: "Kopi Susu Gula Aren", quantity: 2 },
         ],
         status: OrderStatus.PAID,
       },
       {
         customer: CUSTOMERS[6],
-        items: [{ productName: "Kopi Susu Gula Aren", variantName: "250ml", quantity: 4 }],
+        items: [{ productName: "Kopi Susu Gula Aren", quantity: 4 }],
         status: OrderStatus.PRODUCTION,
         notes: "Tolong dibungkus rapi ya, untuk kado",
       },
       {
         customer: CUSTOMERS[7],
         items: [
-          { productName: "Kopi Susu Gula Aren", variantName: "500ml", quantity: 1 },
-          { productName: "Coklat Susu", variantName: "250ml", quantity: 2 },
+          { productName: "Kopi Susu Gula Aren", quantity: 1 },
+          { productName: "Coklat Susu", quantity: 2 },
         ],
         status: OrderStatus.PENDING_PAYMENT,
       },
       {
         customer: CUSTOMERS[8],
         items: [
-          { productName: "Kopi Hitam", variantName: "Panas", quantity: 2 },
-          { productName: "Kopi Susu Gula Aren", variantName: "350ml", quantity: 1 },
+          { productName: "Kopi Hitam", quantity: 2 },
+          { productName: "Kopi Susu Gula Aren", quantity: 1 },
         ],
         status: OrderStatus.PAYMENT_REVIEW,
         notes: "Bayar via transfer BCA",

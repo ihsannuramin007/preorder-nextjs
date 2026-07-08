@@ -10,6 +10,7 @@ import { formatRelative } from "@/lib/utils/date";
 import { ShoppingBag, Clock, CheckCircle, TrendingUp, Calendar, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { OnboardingHint } from "@/components/shared/onboarding-hint";
 
 async function DashboardContent() {
   const supabase = await createClient();
@@ -28,16 +29,25 @@ async function DashboardContent() {
         <p className="text-muted-foreground mb-4">
           Mulai dengan membuat toko kamu terlebih dahulu.
         </p>
-        <Button asChild>
-          <Link href="/toko">Buat Toko Sekarang</Link>
-        </Button>
+        <OnboardingHint
+          id="onboard-create-store"
+          message="👋 Langkah pertama: buat profil toko kamu untuk bisa menerima pesanan dari pelanggan!"
+          side="top"
+        >
+          <Button asChild>
+            <Link href="/toko">Buat Toko Sekarang</Link>
+          </Button>
+        </OnboardingHint>
       </div>
     );
   }
 
   const store = dbUser.store;
 
-  const [openCampaigns, pendingPayments, needVerification, recentOrders] =
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const [openCampaigns, pendingPayments, needVerification, recentOrders, ordersToday, revenueResult] =
     await Promise.all([
       prisma.campaign.count({ where: { storeId: store.id, status: "OPEN" } }),
       prisma.order.count({
@@ -52,26 +62,20 @@ async function DashboardContent() {
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
+      prisma.order.count({
+        where: {
+          campaign: { storeId: store.id },
+          createdAt: { gte: todayStart },
+        },
+      }),
+      prisma.order.aggregate({
+        where: {
+          campaign: { storeId: store.id },
+          status: { in: ["PAID", "PRODUCTION", "READY", "COMPLETED"] },
+        },
+        _sum: { totalAmount: true, totalHpp: true },
+      }),
     ]);
-
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  const [ordersToday, revenueResult] = await Promise.all([
-    prisma.order.count({
-      where: {
-        campaign: { storeId: store.id },
-        createdAt: { gte: todayStart },
-      },
-    }),
-    prisma.order.aggregate({
-      where: {
-        campaign: { storeId: store.id },
-        status: { in: ["PAID", "PRODUCTION", "READY", "COMPLETED"] },
-      },
-      _sum: { totalAmount: true, totalHpp: true },
-    }),
-  ]);
 
   const revenue = Number(revenueResult._sum.totalAmount ?? 0);
   const totalHpp = Number(revenueResult._sum.totalHpp ?? 0);

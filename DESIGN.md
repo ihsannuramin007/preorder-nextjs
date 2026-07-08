@@ -122,16 +122,16 @@ Avoid:
 
 ## Primary
 
-Purple
+Orange
 
 500
-#8B5CF6
+#F97316
 
 600
-#7C3AED
+#EA580C
 
 700
-#6D28D9
+#C2410C
 
 ---
 
@@ -192,6 +192,10 @@ Purple
 # Typography
 
 Font Family:
+
+Plus Jakarta Sans
+
+Fallback:
 
 Inter
 
@@ -357,7 +361,7 @@ Radius:
 
 Primary
 
-Filled Purple
+Filled Orange
 
 Height:
 
@@ -379,7 +383,7 @@ Outline
 
 White background
 
-Purple border
+Orange border
 
 ---
 

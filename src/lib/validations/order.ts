@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const orderItemSchema = z.object({
-  variantId: z.string().min(1, "Pilih varian produk"),
+  productId: z.string().min(1, "Pilih produk"),
   quantity: z.coerce.number().int().positive("Jumlah minimal 1"),
 });
 
